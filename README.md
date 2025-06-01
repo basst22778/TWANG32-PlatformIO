@@ -69,6 +69,14 @@ Super easy to use kits and ready to play units [are available on Tindie](https:/
 
 ![TWANG32](http://www.buildlog.net/blog/wp-content/uploads/2018/03/twang32_enclosure.jpg)
 
+## PINs
+
+- 16 - LED Data
+- 17 - LED Clock (optional, for the strips that need it)
+- 21 - Accelerometer SDA (or the equivalent I²C pin on your board)
+- 22 - Accelerometer SCL (or the equivalent I²C pin on your board)
+- 25 - DAC (analog audio out, unamplified)
+
 ## Overview
 The following is a quick overview of the code to help you understand and tweak the game to your needs.
 

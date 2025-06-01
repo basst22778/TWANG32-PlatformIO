@@ -1,5 +1,5 @@
 #ifndef SETTINGS_H
-	#define SETTINGS_H
+#define SETTINGS_H
 
 #include <EEPROM.h>
 #include "sound.h"
@@ -12,8 +12,8 @@
 #define EEPROM_SIZE				   256
 
 // LEDS
-#define NUM_LEDS        144
-#define MIN_LEDS				60
+#define NUM_LEDS        30
+#define MIN_LEDS				30
 
 
 
