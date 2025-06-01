@@ -211,10 +211,9 @@ void change_setting_serial(char *line) {
 
 void change_setting(char paramCode, uint16_t newValue)
 {
+	lastInputTime = millis(); // reset screensaver count				
+	
 	switch (paramCode) {
-		 
-		
-		lastInputTime = millis(); // reset screensaver count				
 		
 		case 'C': // LED Count
 				user_settings.led_count = constrain(newValue, MIN_LEDS, MAX_LEDS);

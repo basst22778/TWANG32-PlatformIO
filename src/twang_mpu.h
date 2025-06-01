@@ -12,7 +12,7 @@ class Twang_MPU
 	  bool verify();
 
   private:
-	  static const uint8_t MPU_ADDR = 0x68;
+	  static const uint16_t MPU_ADDR = 0x68;
 	  static const uint8_t PWR_MGMT_1 = 0x6B;
 	  static const uint8_t MPU_DATA_REG_START = 0x3B;
 	  static const uint8_t MPU_DATA_LEN = 14;	
@@ -33,7 +33,7 @@ bool Twang_MPU::verify()
 	Wire.beginTransmission(MPU_ADDR);
 	Wire.write(MPU_DATA_WHO_AM_I);  
 	Wire.endTransmission(false);
-	Wire.requestFrom(MPU_ADDR,1,true);  // read the whole MPU data section
+	Wire.requestFrom(MPU_ADDR,(uint8_t)1,true);  // read the whole MPU data section
 	return (Wire.read() == MPU_ADDR);
 }
 

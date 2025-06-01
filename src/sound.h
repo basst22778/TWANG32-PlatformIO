@@ -10,7 +10,7 @@
 #ifndef SOUND_H
   #define SOUND_H
 
-#include "esp32-hal-timer.h";
+#include "esp32-hal-timer.h"
 
 #define ESP32_F_CPU         80000000  // the speed of the processor
 #define AUDIO_INTERRUPT_PRESCALER   80 
