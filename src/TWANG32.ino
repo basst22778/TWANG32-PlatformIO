@@ -1077,7 +1077,6 @@ void tickWin(long mm) {
   }
 }
 
-// TODO: Fix this (does not take actual length into account)
 void drawLives()
 {
   // show how many lives are left by drawing a short line of green leds for each life
@@ -1090,12 +1089,12 @@ void drawLives()
       for (int j=0; j<4; j++)
       {
         leds[pos++] = CRGB(0, 255, 0);
-        FastLED.show();       
+        FastLEDshowESP32();       
       }
       leds[pos++] = CRGB(0, 0, 0);      
       delay(20);
   }
-  FastLED.show();
+  FastLEDshowESP32();
   delay(400);
   FastLED.clear();
 }
