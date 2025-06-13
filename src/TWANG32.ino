@@ -1157,22 +1157,21 @@ void save_game_stats(bool bossKill)
 // --------- SCREENSAVER -----------
 // ---------------------------------
 void screenSaverTick(){
-    long mm = millis();
-    int mode = (mm/30000)%4;
+  long mm = millis();
+  int mode = (mm/30000)%7;
   
 	SFXcomplete(); // turn off sound...play testing showed this to be a problem
 
-	if (mode == 0) {
-		Fire2012();		
-	}
-	else if (mode == 1)
-		sinelon();
-	else if (mode == 2)
-		juggle();
-	else {
-		random_LED_flashes();
-	}
-	
+	switch (mode)
+  {
+    case 0: Fire2012(); break;
+		case 1: sinelon(); break;
+		case 2: juggle(); break;
+    case 3: LED_march(); break;
+    case 4: colorWipes(); break;
+    case 5: colorWheel(); break;
+    default: random_LED_flashes();	
+  }
 }
 
 // ---------------------------------
@@ -1463,7 +1462,7 @@ void sinelon()
 	
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy( leds, user_settings.led_count, 20);
-  int pos = beatsin16(13,0,user_settings.led_count);
+  int pos = beatsin16(13,0,user_settings.led_count-1);
   leds[pos] += CHSV( gHue, 255, 192);
 }
 
@@ -1479,4 +1478,86 @@ void juggle() {
   }
 }
 
+
+void colorWipes()
+{
+  // fill led by led with one color after another
+  static int mymode = 0;
+  switch (mymode)
+  {
+    case 0:
+      if(colorWipe(CRGB(255, 0, 0), 20))
+      {
+        mymode++;
+      }
+      break;
+    case 1: 
+      if(colorWipe(CRGB(0, 255, 0), 20))
+      {
+        mymode++;
+      }
+      break;
+    case 2: 
+      if(colorWipe(CRGB(0, 0, 255), 20))
+      {
+        mymode++;
+      }
+      break;
+    case 3: 
+      if(colorWipe(CRGB(128, 128, 0), 20))
+      {
+        mymode++;
+      }
+      break;
+    case 4: 
+      if(colorWipe(CRGB(0, 128, 128), 20))
+      {
+        mymode++;
+      }
+      break;
+    case 5: 
+      if(colorWipe(CRGB(128, 0, 128), 20))
+      {
+        mymode++;
+      }
+      break;
+    default: 
+      if(colorWipe(CRGB(85, 85, 85), 20))
+      {
+        mymode = 0;
+      }
+      break;
+  }
+}
+
+int colorWipe(CRGB color, int wait)
+{
+  // fill led by led with one color
+  static long rmm = 0;
+  long cmm = millis() - rmm;
+  uint32_t i = (cmm/wait);
+
+  if (i >= user_settings.led_count)
+  {
+    rmm = millis();
+    cmm = 0;
+    if (i == (user_settings.led_count))
+    {
+      return 1;
+    }
+  }
+
+  leds[i] = color;
+  return 0;
+}
+
+void colorWheel()
+{
+  // cycle hue of each LED with offset between the LEDs
+  long mm = millis();
+  for (int pos = 0; pos < user_settings.led_count; pos++)
+  {
+    leds[pos] = CHSV((mm / 10) - (pos * 255 / user_settings.led_count), 255, 128);
+  }
+}
 
