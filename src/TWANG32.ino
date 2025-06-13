@@ -32,7 +32,7 @@
 #define VERSION "2018-06-28"
 
 #include <FastLED.h>
-#include<Wire.h>
+#include <Wire.h>
 #include "Arduino.h"
 #include "RunningMedian.h"
 
@@ -477,26 +477,26 @@ void loadLevel(){
 		spawnEnemy(900, 0, 1, 0);	
 		break;
 	case 2:	
-		// Spawning enemies at exit every 2 seconds		
-		spawnPool[0].Spawn(1000, 3000, 2, 0, 0);
+		// Spawning enemies just before exit every 2 seconds		
+		spawnPool[0].Spawn(950, 3000, 2, 0, 0);
 		break;
 	case 3:
 		// Lava intro
 		spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, 0);
 		spawnEnemy(350, 0, 1, 0);
-		spawnPool[0].Spawn(1000, 5500, 3, 0, 0);
+		spawnPool[0].Spawn(950, 5500, 3, 0, 0);
 		break;		
 	case 4:
 	    // intro to moving lava (down)
 		spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, -0.5);
 		spawnEnemy(350, 0, 1, 0);
-		spawnPool[0].Spawn(1000, 5500, 3, 0, 0);
+		spawnPool[0].Spawn(950, 5500, 3, 0, 0);
 		break;
 	case 5:		
 		// lava spreading
 		spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.25, 0);
 		spawnEnemy(350, 0, 1, 0);
-		spawnPool[0].Spawn(1000, 5500, 3, 0, 0);	
+		spawnPool[0].Spawn(950, 5500, 3, 0, 0);	
 		break;
 	case 6:	
 		// Sin wave enemy				
@@ -508,18 +508,18 @@ void loadLevel(){
 		spawnEnemy(700, 1, 7, 275);
 		spawnEnemy(500, 1, 5, 250);
 		
-		spawnEnemy(600, 1, 7, 200);
-		spawnEnemy(800, 1, 5, 350);
+		spawnEnemy(600, 1, 7, 350);
+		spawnEnemy(800, 1, 5, 200);
 		
 		spawnEnemy(400, 1, 7, 150);
-		spawnEnemy(450, 1, 5, 400);		
+		spawnEnemy(450, 1, 5, 300);		
 		break;	
     case 8:
 		// lava moving up
 		playerPosition = 200;
-		spawnLava(10, 180, 2000, 2000, 0, Lava::OFF, 0, 0.5);
-		spawnEnemy(350, 0, 1, 0);
-		spawnPool[0].Spawn(1000, 5500, 3, 0, 0);
+		spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
+		spawnEnemy(500, 0, 1, 0);
+		spawnPool[0].Spawn(950, 5500, 3, 0, 0);
 		break;
 	case 9:
 		// Conveyor
@@ -541,7 +541,7 @@ void loadLevel(){
 		// lava spread and fall
 		spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.2, -0.5);
 		spawnEnemy(350, 0, 1, 0);
-		spawnPool[0].Spawn(1000, 5500, 3, 0, 0);
+		spawnPool[0].Spawn(950, 5500, 3, 0, 0);
 		break;
 	case 12:   // spawn train;		
 		spawnPool[0].Spawn(900, 1300, 2, 0, 0);					
@@ -564,13 +564,13 @@ void loadLevel(){
 		spawnLava(195, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
 		spawnLava(400, 500, 2000, 2000, 0, Lava::OFF, 0, 0);
 		spawnLava(600, 700, 2000, 2000, 0, Lava::OFF, 0, 0);
-		spawnPool[0].Spawn(1000, 3800, 4, 0, 0);
+		spawnPool[0].Spawn(950, 3800, 4, 0, 0);
 		break;
 	case 17:
 		// Sin enemy #2 practice (slow conveyor)
 		spawnEnemy(700, 1, 7, 275);
 		spawnEnemy(500, 1, 5, 250);
-		spawnPool[0].Spawn(1000, 5500, 4, 0, 3000);
+		spawnPool[0].Spawn(950, 5500, 4, 0, 3000);
 		spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
 		spawnConveyor(100, 900, -4);
 		break;
@@ -579,7 +579,7 @@ void loadLevel(){
 		spawnEnemy(800, 1, 7, 275);
 		spawnEnemy(700, 1, 7, 275);
 		spawnEnemy(500, 1, 5, 250);			
-		spawnPool[0].Spawn(1000, 3000, 4, 0, 3000);
+		spawnPool[0].Spawn(950, 3000, 4, 0, 3000);
 		spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
 		spawnConveyor(100, 900, -6);
 		break;
@@ -830,15 +830,24 @@ void drawExit(){
 }
 
 void tickSpawners(){
-    long mm = millis();
-    for(int s = 0; s<SPAWN_COUNT; s++){
-        if(spawnPool[s].Alive() && spawnPool[s]._activate < mm){
-            if(spawnPool[s]._lastSpawned + spawnPool[s]._rate < mm || spawnPool[s]._lastSpawned == 0){
-                spawnEnemy(spawnPool[s]._pos, spawnPool[s]._dir, spawnPool[s]._sp, 0);
-                spawnPool[s]._lastSpawned = mm;
-            }
+  const CRGB defaultCol = CRGB(LAVA_OFF_BRIGHTNESS, LAVA_OFF_BRIGHTNESS / 1.5, 0);
+  const CRGB warnCol =    CRGB(LAVA_OFF_BRIGHTNESS * 2, LAVA_OFF_BRIGHTNESS * 2, 0);
+  long mm = millis();
+  for(int s = 0; s<SPAWN_COUNT; s++){
+      if(spawnPool[s].Alive() && spawnPool[s]._activate < mm){
+        long nextSpawn = spawnPool[s]._lastSpawned + spawnPool[s]._rate;
+        if(nextSpawn - mm < 0 || spawnPool[s]._lastSpawned == 0){
+          spawnEnemy(spawnPool[s]._pos, spawnPool[s]._dir, spawnPool[s]._sp, 0);
+          spawnPool[s]._lastSpawned = mm;
         }
-    }
+        if (nextSpawn - mm < 800){
+          leds[getLED(spawnPool[s]._pos)] = (nextSpawn - mm) % 200 < 100 ? defaultCol : warnCol;
+        }
+        else {
+          leds[getLED(spawnPool[s]._pos)] = defaultCol;
+        }
+      }
+  }
 }
 
 void tickLava(){
@@ -1068,7 +1077,7 @@ void tickWin(long mm) {
   }
 }
 
-
+// TODO: Fix this (does not take actual length into account)
 void drawLives()
 {
   // show how many lives are left by drawing a short line of green leds for each life
