@@ -148,6 +148,10 @@ long killTime;
 int lives = LIVES_PER_LEVEL; 
 bool lastLevel = false;
 
+bool gyroConnected = false;
+unsigned long gyroLastCheckMs = 0;
+const unsigned long GYRO_CHECK_INTERVAL_MS = 2000;
+
 int score = 0;
 
 #define FASTLED_SHOW_CORE 0  // -- The core to run FastLED.show()
@@ -204,6 +208,9 @@ void setup() {
 	
 	Wire.begin();
 	accelgyro.initialize();
+  gyroConnected = accelgyro.verify();
+  gyroLastCheckMs = millis();
+  Serial.printf("Gyro is %sconncted!\n", gyroConnected ? "" : "NOT ");
 	
 #ifdef USE_NEOPIXEL
   Serial.print("\r\nCompiled for WS2812B (Neopixel) LEDs");
@@ -233,7 +240,6 @@ void setup() {
 
 void loop() {
   long mm = millis();
-  int brightness = 0;  
     
   ap_client_check(); // check for web client
   checkSerialInput();
@@ -251,7 +257,18 @@ void loop() {
   }
 
   if (mm - previousMillis >= MIN_REDRAW_INTERVAL) {
-      getInput(); 
+    if (gyroConnected) {
+      gyroConnected = getInput();
+      if (!gyroConnected)
+        Serial.println("Gyro disconnected!");
+    }
+    else if (millis() - gyroLastCheckMs > GYRO_CHECK_INTERVAL_MS) {
+      accelgyro.initialize();
+      gyroConnected = accelgyro.verify();
+      gyroLastCheckMs = millis();
+      if (gyroConnected)
+        Serial.println("Gyro connected!");
+    }
 
       
       
@@ -264,10 +281,15 @@ void loop() {
                 levelNumber = -1;
                 stageStartTime = mm;
                 stage = WIN;
+                FastLED.setBrightness(user_settings.led_brightness);
+                Serial.println("Woke up from screensaver, going to game...");
             }
         }else{
-            if(lastInputTime+TIMEOUT < mm){        
+            if(lastInputTime+TIMEOUT < mm && stage != SCREENSAVER) {        
                 stage = SCREENSAVER;
+                // dim when going to screensaver
+                FastLED.setBrightness(constrain(user_settings.led_brightness / 4, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
+                Serial.println("Going to screensaver...");
             }
         }
 
@@ -336,7 +358,7 @@ void loop() {
         }else if(stage == DEAD){
             // DEAD
             FastLED.clear();
-			tickDie(mm);
+			      tickDie(mm);
             if(!tickParticles()){
                 loadLevel();
             }
@@ -376,7 +398,7 @@ void loop() {
 // ---------------------------------
 void loadLevel(){    	
 	// leave these alone
-	FastLED.setBrightness(user_settings.led_brightness);
+	// FastLED.setBrightness(user_settings.led_brightness);
 	updateLives();
 	cleanupLevel();    
 	playerAlive = 1;
@@ -942,7 +964,7 @@ void tickBossKilled(long mm) // boss funeral
 {
 	static uint8_t gHue = 0; 
 	
-	FastLED.setBrightness(255); // super bright!
+	FastLED.setBrightness(constrain(user_settings.led_brightness * 2, MIN_BRIGHTNESS, MAX_BRIGHTNESS)); // super bright!
 	
 	int brightness = 0;
 	FastLED.clear();	
@@ -961,7 +983,8 @@ void tickBossKilled(long mm) // boss funeral
 			leds[i].setHSV(brightness, 255, 50);
 		}
 		SFXcomplete();
-	}else{		
+	}else{
+    FastLED.setBrightness(user_settings.led_brightness);
 		nextLevel();
 	}
 }
@@ -1147,7 +1170,7 @@ void screenSaverTick(){
 // ---------------------------------
 // ----------- JOYSTICK ------------
 // ---------------------------------
-void getInput(){
+bool getInput(){
     // This is responsible for the player movement speed and attacking.
     // You can replace it with anything you want that passes a -90>+90 value to joystickTilt
     // and any value to joystickWobble that is greater than ATTACK_THRESHOLD (defined at start)
@@ -1157,8 +1180,11 @@ void getInput(){
         // if(digitalRead(attackButtonPinNumber) == HIGH) joystickWobble = ATTACK_THRESHOLD;
 	int16_t ax, ay, az;
 	int16_t gx, gy, gz;
+  ax = ay = az = gx = gy = gz = 0;
 
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    bool connected = accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    if (!connected)
+      return false;
 		
 		
 		
@@ -1187,6 +1213,7 @@ void getInput(){
 			//Serial.print("wobble:"); Serial.println(joystickWobble);
 		#endif
 		
+    return true;
 }
 
 // ---------------------------------
