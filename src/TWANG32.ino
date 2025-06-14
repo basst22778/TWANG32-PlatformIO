@@ -34,7 +34,6 @@
 #include <FastLED.h>
 #include <Wire.h>
 #include "Arduino.h"
-#include "RunningMedian.h"
 
 // twang files
 #include "config.h"
@@ -49,6 +48,7 @@
 #include "sound.h"
 #include "settings.h"
 #include "wifi_ap.h"
+#include "samples.h"
 
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
 #error "Requires FastLED 3.1 or later; check github for latest code."
@@ -90,8 +90,8 @@ bool attacking = 0;         // Is the attack in progress?
 
 Twang_MPU accelgyro = Twang_MPU();
 CRGB leds[VIRTUAL_LED_COUNT];
-RunningMedian MPUAngleSamples = RunningMedian(5);
-RunningMedian MPUWobbleSamples = RunningMedian(5);
+Samples MPUAngleSamples = {0};
+Samples MPUWobbleSamples = {0};
 iSin isin = iSin();
 
 // #define JOYSTICK_DEBUG  // comment out to stop serial debugging
@@ -1359,15 +1359,15 @@ bool getInput()
         a -= user_settings.joystick_deadzone;
     if (a < 0)
         a += user_settings.joystick_deadzone;
-    MPUAngleSamples.add(a);
-    MPUWobbleSamples.add(g);
+    sample_add(&MPUAngleSamples, a);
+    sample_add(&MPUWobbleSamples, g);
 
-    joystickTilt = MPUAngleSamples.getMedian();
+    joystickTilt = sample_median(&MPUAngleSamples);
     if (JOYSTICK_DIRECTION == 1)
     {
         joystickTilt = 0 - joystickTilt;
     }
-    joystickWobble = abs(MPUWobbleSamples.getHighest());
+    joystickWobble = abs(sample_highest(&MPUWobbleSamples));
 
 #ifdef JOYSTICK_DEBUG
     // Serial.print("tilt:"); Serial.println(joystickTilt);
