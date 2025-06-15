@@ -224,7 +224,7 @@ void setup()
     // -- Create the ESP32 FastLED show task
     xTaskCreatePinnedToCore(FastLEDshowTask, "FastLEDshowTask", 2048, NULL, 2, &FastLEDshowTaskHandle, FASTLED_SHOW_CORE);
 
-    sound_init(DAC_AUDIO_PIN);
+    sound_init();
 
     ap_setup();
 
@@ -313,7 +313,7 @@ void loop()
             {
                 SFXcomplete();
                 levelNumber = 0;
-                loadLevel();
+                loadLevel(0);
             }
         }
         else if (stage == PLAY)
@@ -379,7 +379,7 @@ void loop()
             tickDie(mm);
             if (!tickParticles())
             {
-                loadLevel();
+                loadLevel(levelNumber);
             }
         }
         else if (stage == WIN)
@@ -417,7 +417,7 @@ void loop()
 // ---------------------------------
 // ------------ LEVELS -------------
 // ---------------------------------
-void loadLevel()
+void loadLevel(int num)
 {
     // leave these alone
     // FastLED.setBrightness(user_settings.led_brightness);
@@ -489,7 +489,10 @@ void loadLevel()
 
 
     */
-    switch (levelNumber)
+
+    // TODO: Levels with conveyor and lava
+
+    switch (num)
     {
     case 0: // basic introduction
         playerPosition = 200;
@@ -610,6 +613,11 @@ void loadLevel()
         // Boss this should always be the last level
         spawnBoss();
         break;
+    default:
+        Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\n", num);
+        playerPosition = 200;
+        spawnEnemy(1, 0, 0, 0);
+        return;
     }
     stageStartTime = millis();
     stage = PLAY;
@@ -731,15 +739,8 @@ void nextLevel()
     else
     {
         lives = user_settings.lives_per_level;
-        loadLevel();
+        loadLevel(levelNumber);
     }
-}
-
-void gameOver()
-{
-
-    levelNumber = 0;
-    loadLevel();
 }
 
 void die()

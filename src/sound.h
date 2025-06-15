@@ -12,6 +12,8 @@
 
 #include "esp32-hal-timer.h"
 
+#define DAC_AUDIO_PIN 25 // should be 25 or 26 only
+
 #define ESP32_F_CPU 80000000 // the speed of the processor
 #define AUDIO_INTERRUPT_PRESCALER 80
 #define SOUND_TIMER_NO 0
@@ -43,9 +45,9 @@ void IRAM_ATTR onSoundTimer()
 }
 
 // pin must be a DAC pin number !! (typically 25 or 26)
-void sound_init(int pin)
+void sound_init()
 {
-	dac_pin = pin;
+	dac_pin = DAC_AUDIO_PIN;
 	sound_on = false;
 	pinMode(dac_pin, OUTPUT);
 	sound_volume = 0;

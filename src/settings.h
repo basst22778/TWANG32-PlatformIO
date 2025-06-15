@@ -41,8 +41,6 @@ const uint8_t LIVES_PER_LEVEL = 3;	 // default lives per level
 #define MIN_VOLUME 0
 #define MAX_VOLUME 255
 
-#define DAC_AUDIO_PIN 25 // should be 25 or 26 only
-
 enum ErrorNums
 {
 	ERR_SETTING_NUM,
@@ -61,7 +59,6 @@ void settings_eeprom_write();
 void settings_eeprom_read();
 void change_setting_serial(char *line);
 void processSerial(char inChar);
-void printError(int reason);
 void show_settings_menu();
 void reset_settings();
 void change_setting(char paramCode, uint16_t newValue);
@@ -392,23 +389,6 @@ void settings_eeprom_write()
 	EEPROM.end();
 
 	sound_resume(); // restore sound interrupt
-}
-
-void printError(int reason)
-{
-	switch (reason)
-	{
-	case ERR_SETTING_NUM:
-		Serial.print("Error: Invalid setting number");
-		break;
-	case ERR_SETTING_RANGE:
-		Serial.print("Error: Setting out of range");
-		break;
-	default:
-		Serial.print("Error:");
-		Serial.println(reason);
-		break;
-	}
 }
 
 #endif
