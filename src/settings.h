@@ -93,7 +93,6 @@ typedef struct
 settings_t user_settings;
 
 #define READ_BUFFER_LEN 10
-#define CARRIAGE_RETURN 13
 char readBuffer[READ_BUFFER_LEN];
 uint8_t readIndex = 0;
 
@@ -114,44 +113,14 @@ void checkSerialInput()
 
 void processSerial(char inChar)
 {
-	readBuffer[readIndex] = inChar;
-	switch (readBuffer[readIndex])
+	switch (inChar)
 	{
-	case '?':
-		readIndex = 0;
-		show_game_stats();
-		show_settings_menu();
+	case '\r': // ignore carriage return
 		return;
-		break;
 
-	case 'R':
-		readIndex = 0;
-		reset_settings();
-		settings_eeprom_write();
-		return;
-		break;
-
-	case 'P':
-		user_settings.games_played = 0;
-		user_settings.total_points = 0;
-		user_settings.high_score = 0;
-		user_settings.boss_kills = 0;
-		settings_eeprom_write();
-		return;
-		break;
-
-	case '!':
-		ESP.restart();
-	default:
-
-		break;
-	}
-
-	if (readBuffer[readIndex] == CARRIAGE_RETURN)
-	{
-		if (readIndex < 3)
+	case '\n': // parse as settings
+		if (readIndex < 3) // not enough characters
 		{
-			// not enough characters
 			readIndex = 0;
 		}
 		else
@@ -160,32 +129,65 @@ void processSerial(char inChar)
 			change_setting_serial(readBuffer);
 			readIndex = 0;
 		}
+		return;
+
+	case '?': // show stats and settings
+		if (readIndex == 0)
+		{
+			show_game_stats();
+			show_settings_menu();
+		}
+		return;
+
+	case 'R': // reset everything
+		if (readIndex == 0)
+		{
+			readIndex = 0;
+			reset_settings();
+			settings_eeprom_write();
+		}
+		return;
+
+	case 'P': // reset stats only
+		if (readIndex == 0)
+		{
+			user_settings.games_played = 0;
+			user_settings.total_points = 0;
+			user_settings.high_score = 0;
+			user_settings.boss_kills = 0;
+			settings_eeprom_write();
+		}
+		return;
+
+	case '!': // restart ESP
+		if (readIndex == 0)
+			ESP.restart();
+		return;
+
+	default:
+		break;
 	}
-	else if (readIndex >= READ_BUFFER_LEN)
-	{
+	
+	if (readIndex >= READ_BUFFER_LEN)
 		readIndex = 0; // too many characters. Reset and try again
-	}
 	else
-		readIndex++;
+		readBuffer[readIndex++] = inChar;
 }
 
 void change_setting_serial(char *line)
 {
-	// line formate should be ss=nn
-	// ss is always a 2 character integer
-	// nn starts at index 3 and can be up to a 5 character unsigned integer
-
-	// 12=12345
-	// 01234567
+	// line format should be X=nn
+	// X is always a 1 character code
+	// nn starts at index 2 and can be up to a 5 character unsigned integer (16bit max)
+	// ex: L=300
 
 	char setting_val[6];
 	char param;
 	uint16_t newValue;
-	// Serial.print("Read Buffer: "); Serial.println(readBuffer);
 
-	if (readBuffer[1] != '=')
-	{ // check if the equals sign is there
-		Serial.print("Missing '=' in command");
+	if (line[1] != '=')
+	{ 
+		Serial.printf("ERROR: Malformed command (needs to be X=nn): %s\n", line);
 		readIndex = 0;
 		return;
 	}
@@ -195,11 +197,11 @@ void change_setting_serial(char *line)
 	{
 		if (i + 2 < readIndex)
 		{
-			if (isDigit(readBuffer[i + 2]))
-				setting_val[i] = readBuffer[i + 2];
+			if (isdigit(line[i + 2]))
+				setting_val[i] = line[i + 2];
 			else
 			{
-				Serial.println("Invalid setting value");
+				Serial.printf("Invalid value: %s\n", line);
 				return;
 			}
 		}
@@ -207,10 +209,8 @@ void change_setting_serial(char *line)
 			setting_val[i] = 0;
 	}
 
-	param = readBuffer[0];
+	param = line[0];
 	newValue = atoi(setting_val); // convert the val section to an integer
-
-	memset(readBuffer, 0, sizeof(readBuffer));
 
 	change_setting(param, newValue);
 }
@@ -219,6 +219,7 @@ void change_setting(char paramCode, uint16_t newValue)
 {
 	lastInputTime = millis(); // reset screensaver count
 
+	// NOTE: Cannot use R or P as paramCode, since they have special functions in processSerial()
 	switch (paramCode)
 	{
 	case 'C': // LED Count
@@ -253,10 +254,8 @@ void change_setting(char paramCode, uint16_t newValue)
 		break;
 
 	default:
-		Serial.print("Command Error: ");
-		Serial.println(readBuffer[0]);
+		Serial.printf("ERROR: Unknown command %s with value %d\n", paramCode, newValue);
 		return;
-		break;
 	}
 
 	show_settings_menu();
