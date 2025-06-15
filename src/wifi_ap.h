@@ -185,7 +185,7 @@ void ap_client_check()
 					// if it is not numeric, it will convert to 0.
 					// The the change_setting function will make sure the range is OK
 
-					change_setting(paramCode, val.toInt());
+					settings_set(paramCode, true, val.toInt());
 
 					page_to_send = Stats;
 				}

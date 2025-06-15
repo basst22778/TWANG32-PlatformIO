@@ -238,7 +238,10 @@ void loop()
     long mm = millis();
 
     ap_client_check(); // check for web client
-    checkSerialInput();
+	if (Serial.available())
+	{
+		settings_processSerial(Serial.read());
+	}
 
     if (stage == PLAY)
     {

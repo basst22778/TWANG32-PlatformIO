@@ -57,11 +57,11 @@ void settings_init();
 void show_game_stats();
 void settings_eeprom_write();
 void settings_eeprom_read();
-void change_setting_serial(char *line);
-void processSerial(char inChar);
+void settings_processSerial(char inChar);
+void settings_fromString(char *line, int len);
+void settings_set(char code, bool hasValue, uint16_t newValue);
 void show_settings_menu();
 void reset_settings();
-void change_setting(char paramCode, uint16_t newValue);
 
 SemaphoreHandle_t xMutex;
 
@@ -100,162 +100,143 @@ void settings_init()
 	show_game_stats();
 }
 
-void checkSerialInput()
+void settings_processSerial(char inChar)
 {
-	if (Serial.available())
-	{
-		processSerial(Serial.read());
-	}
-}
+	static char readBuffer[READ_BUFFER_LEN];
+	static unsigned int readIndex = 0;
 
-void processSerial(char inChar)
-{
+	assert(readIndex < READ_BUFFER_LEN);
+
 	switch (inChar)
 	{
 	case '\r': // ignore carriage return
-		return;
+		break;
 
 	case '\n': // parse as settings
-		if (readIndex < 3) // not enough characters
-		{
-			readIndex = 0;
-		}
-		else
-		{
-			readBuffer[readIndex] = 0; // mark it as the end of the string
-			change_setting_serial(readBuffer);
-			readIndex = 0;
-		}
-		return;
+		readBuffer[readIndex] = 0;
+		settings_fromString(readBuffer, readIndex);
+		readIndex = 0;
+		break;
 
-	case '?': // show stats and settings
-		if (readIndex == 0)
+	default:
+		if (readIndex == READ_BUFFER_LEN - 1) // leave room for 0 terminator
+			readIndex = 0;					  // too many characters. Reset and try again
+		else
+			readBuffer[readIndex++] = inChar;
+	}
+}
+
+void settings_fromString(char *line, int len)
+{
+	assert(line);
+	assert(len > 0);
+	assert(len < READ_BUFFER_LEN);
+
+	if (len == 1)
+	{
+		settings_set(line[0], false, 0);
+		return;
+	}
+
+	if (len < 3)
+	{
+		Serial.printf("ERROR: Malformed serial command: %s\n", line);
+		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
+		return;
+	}
+
+	if (line[1] != '=')
+	{
+		Serial.printf("ERROR: Malformed serial command: %s\n", line);
+		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
+		return;
+	}
+
+	for (int idx = 2; idx < len; ++idx)
+	{
+		if (!isdigit(line[idx]))
 		{
+			Serial.printf("ERROR: Malformed value in serial command: %s\n", line);
+			return;
+		}
+	}
+
+	int val = atoi(line + 2);
+	settings_set(line[0], true, val);
+}
+
+void settings_set(char code, bool hasValue, uint16_t newValue)
+{
+	lastInputTime = millis(); // reset screensaver count
+
+	if (hasValue)
+	{
+		switch(code)
+		{
+			case 'C': // LED Count
+				user_settings.led_count = constrain(newValue, MIN_LEDS, MAX_LEDS);
+				settings_eeprom_write();
+				Serial.printf("Set LED count to %d\n", user_settings.led_count);
+				break;
+			case 'B': // brightness
+				user_settings.led_brightness = constrain(newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+				FastLED.setBrightness(user_settings.led_brightness);
+				settings_eeprom_write();
+				Serial.printf("Set brightness to %d\n", user_settings.led_brightness);
+				break;
+			case 'S': // sound
+				user_settings.audio_volume = constrain(newValue, MIN_VOLUME, MAX_VOLUME);
+				settings_eeprom_write();
+				Serial.printf("Set audio volume to %d\n", user_settings.audio_volume);
+				break;
+			case 'D': // deadzone, joystick
+				user_settings.joystick_deadzone = constrain(newValue, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
+				settings_eeprom_write();
+				Serial.printf("Set deadzone to %d\n", user_settings.joystick_deadzone);
+				break;
+			case 'A': // attack threshold, joystick
+				user_settings.attack_threshold = constrain(newValue, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
+				settings_eeprom_write();
+				Serial.printf("Set attack threshold to %d\n", user_settings.attack_threshold);
+				break;
+			case 'L': // lives per level
+				user_settings.lives_per_level = constrain(newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
+				settings_eeprom_write();
+				Serial.printf("Set lives to %d\n", user_settings.lives_per_level);
+				break;
+			default:
+				Serial.printf("ERROR: Unknown setting %c=%d\n", code, newValue);
+				return;
+		}
+	}
+	else
+	{
+		switch (code)
+		{
+		case '?': // show stats and settings
 			show_game_stats();
 			show_settings_menu();
-		}
-		return;
-
-	case 'R': // reset everything
-		if (readIndex == 0)
-		{
-			readIndex = 0;
+			break;
+		case 'R': // reset everything
 			reset_settings();
 			settings_eeprom_write();
-		}
-		return;
-
-	case 'P': // reset stats only
-		if (readIndex == 0)
-		{
+			show_settings_menu();
+			break;
+		case 'P': // reset stats only
 			user_settings.games_played = 0;
 			user_settings.total_points = 0;
 			user_settings.high_score = 0;
 			user_settings.boss_kills = 0;
 			settings_eeprom_write();
-		}
-		return;
-
-	case '!': // restart ESP
-		if (readIndex == 0)
+			break;
+		case '!': // restart ESP
 			ESP.restart();
-		return;
-
-	default:
-		break;
-	}
-	
-	if (readIndex >= READ_BUFFER_LEN)
-		readIndex = 0; // too many characters. Reset and try again
-	else
-		readBuffer[readIndex++] = inChar;
-}
-
-void change_setting_serial(char *line)
-{
-	// line format should be X=nn
-	// X is always a 1 character code
-	// nn starts at index 2 and can be up to a 5 character unsigned integer (16bit max)
-	// ex: L=300
-
-	char setting_val[6];
-	char param;
-	uint16_t newValue;
-
-	if (line[1] != '=')
-	{ 
-		Serial.printf("ERROR: Malformed command (needs to be X=nn): %s\n", line);
-		readIndex = 0;
-		return;
-	}
-
-	// move the value characters into a char array while verifying they are digits
-	for (int i = 0; i < 5; i++)
-	{
-		if (i + 2 < readIndex)
-		{
-			if (isdigit(line[i + 2]))
-				setting_val[i] = line[i + 2];
-			else
-			{
-				Serial.printf("Invalid value: %s\n", line);
-				return;
-			}
+			break;
+		default:
+			Serial.printf("ERROR: Unknown setting: %c\n", code);
 		}
-		else
-			setting_val[i] = 0;
 	}
 
-	param = line[0];
-	newValue = atoi(setting_val); // convert the val section to an integer
-
-	change_setting(param, newValue);
-}
-
-void change_setting(char paramCode, uint16_t newValue)
-{
-	lastInputTime = millis(); // reset screensaver count
-
-	// NOTE: Cannot use R or P as paramCode, since they have special functions in processSerial()
-	switch (paramCode)
-	{
-	case 'C': // LED Count
-		user_settings.led_count = constrain(newValue, MIN_LEDS, MAX_LEDS);
-		settings_eeprom_write();
-		break;
-
-	case 'B': // brightness
-		user_settings.led_brightness = constrain(newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-		FastLED.setBrightness(user_settings.led_brightness);
-		settings_eeprom_write();
-		break;
-
-	case 'S': // sound
-		user_settings.audio_volume = constrain(newValue, MIN_VOLUME, MAX_VOLUME);
-		settings_eeprom_write();
-		break;
-
-	case 'D': // deadzone, joystick
-		user_settings.joystick_deadzone = constrain(newValue, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
-		settings_eeprom_write();
-		break;
-
-	case 'A': // attack threshold, joystick
-		user_settings.attack_threshold = constrain(newValue, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
-		settings_eeprom_write();
-		break;
-
-	case 'L': // lives per level
-		user_settings.lives_per_level = constrain(newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
-		settings_eeprom_write();
-		break;
-
-	default:
-		Serial.printf("ERROR: Unknown command %s with value %d\n", paramCode, newValue);
-		return;
-	}
-
-	show_settings_menu();
 }
 
 void reset_settings()
