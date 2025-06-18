@@ -56,7 +56,6 @@
 
 #define DIRECTION 1
 #define USE_GRAVITY 0  // 0/1 use gravity (LED strip going up wall)
-#define BEND_POINT 550 // 0/1000 point at which the LED strip goes up the wall
 
 // GAME
 long previousMillis = 0; // Time of the last redraw
@@ -97,9 +96,6 @@ iSin isin = iSin();
 // #define JOYSTICK_DEBUG  // comment out to stop serial debugging
 
 // POOLS
-#define LIFE_LEDS 3
-int lifeLEDs[LIFE_LEDS] = {7, 6, 5}; // these numbers are Arduino GPIO numbers...this is not used in the B. Dring enclosure design
-
 #define ENEMY_COUNT 10
 Enemy enemyPool[ENEMY_COUNT] = {
     Enemy(), Enemy(), Enemy(), Enemy(), Enemy(), Enemy(), Enemy(), Enemy(), Enemy(), Enemy()};

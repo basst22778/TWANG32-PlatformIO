@@ -41,12 +41,6 @@ const uint8_t LIVES_PER_LEVEL = 3;	 // default lives per level
 #define MIN_VOLUME 0
 #define MAX_VOLUME 255
 
-enum ErrorNums
-{
-	ERR_SETTING_NUM,
-	ERR_SETTING_RANGE
-};
-
 long lastInputTime = 0;
 
 // TODO ... move all the settings to this file.
@@ -62,8 +56,6 @@ void settings_fromString(char *line, int len);
 void settings_set(char code, bool hasValue, uint16_t newValue);
 void show_settings_menu();
 void reset_settings();
-
-SemaphoreHandle_t xMutex;
 
 typedef struct
 {
