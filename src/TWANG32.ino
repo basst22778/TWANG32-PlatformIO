@@ -503,25 +503,27 @@ void loadLevel(int num)
         break;
     case 2:
         // Spawning enemies just before exit every 2 seconds
-        spawnPool[0].Spawn(950, 3000, 2, 0, 0);
+        spawnPool[0].Spawn(950, 4000, 2, 0, -3000);
         break;
     case 3:
         // Lava intro
         spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnEnemy(350, 0, 1, 0);
-        spawnPool[0].Spawn(950, 5500, 3, 0, 0);
+        spawnPool[0].Spawn(950, 4500, 3, 0, -3500);
         break;
     case 4:
         // intro to moving lava (down)
-        spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, -0.5);
-        spawnEnemy(350, 0, 1, 0);
-        spawnPool[0].Spawn(950, 5500, 3, 0, 0);
+        spawnLava(700, 800, 2000, 2000, 0, Lava::OFF, 0, -0.5);
+        spawnEnemy(450, 0, 1, 0);
+        spawnEnemy(950, 0, 1, 0);
+        spawnPool[0].Spawn(950, 4500, 3, 0, -2000);
         break;
     case 5:
         // lava spreading
-        spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.25, 0);
-        spawnEnemy(350, 0, 1, 0);
-        spawnPool[0].Spawn(950, 5500, 3, 0, 0);
+        spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.25, 0);
+        spawnLava(800, 850, 2000, 2000, 0, Lava::OFF, 0.25, 0);
+        spawnEnemy(450, 0, 1, 0);
+        spawnEnemy(900, 0, 2, 0);
         break;
     case 6:
         // Sin wave enemy
@@ -530,26 +532,27 @@ void loadLevel(int num)
         break;
     case 7:
         // Sin enemy swarm
-        spawnEnemy(700, 1, 7, 275);
-        spawnEnemy(500, 1, 5, 250);
+        spawnEnemy(700, 1, 7, 275); // 425..975
+        spawnEnemy(600, 1, 5, 300); // 300..900
 
-        spawnEnemy(600, 1, 7, 350);
-        spawnEnemy(800, 1, 5, 200);
+        spawnEnemy(800, 1, 6, 200); // 600..1000
+        spawnEnemy(450, 1, 5, 300); // 150..750
 
-        spawnEnemy(400, 1, 7, 150);
-        spawnEnemy(450, 1, 5, 300);
+        spawnEnemy(500, 1, 7, 350); // 150..800
+        spawnEnemy(450, 1, 3, 150); // 300..600
         break;
     case 8:
         // lava moving up
         playerPosition = 200;
         spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
         spawnEnemy(500, 0, 1, 0);
-        spawnPool[0].Spawn(950, 5500, 3, 0, 0);
+        spawnPool[0].Spawn(950, 3000, 3, 0, -1000);
         break;
     case 9:
         // Conveyor
         spawnConveyor(100, 600, -6);
-        spawnEnemy(800, 0, 0, 0);
+        spawnEnemy(650, 0, 0, 0);
+        spawnEnemy(800, 1, 1, 0);
         break;
     case 10:
         // Conveyor of enemies
@@ -618,7 +621,7 @@ void loadLevel(int num)
         spawnEnemy(1, 0, 0, 0);
         return;
     }
-    stageStartTime = millis();
+    lastInputTime = stageStartTime = millis();
     stage = PLAY;
 }
 
