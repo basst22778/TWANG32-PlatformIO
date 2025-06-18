@@ -1037,37 +1037,30 @@ bool tickParticles()
 
 void tickConveyors()
 {
-    // TODO should the visual speed be proportional to the conveyor speed?
-
-    int b, speed, n, i, ss, ee, led;
     long m = 10000 + millis();
     playerPositionModifier = 0;
 
     int levels = 5; // brightness levels in conveyor
 
-    for (i = 0; i < CONVEYOR_COUNT; i++)
+    for (int i = 0; i < CONVEYOR_COUNT; i++)
     {
-        if (conveyorPool[i]._alive)
+        if (! conveyorPool[i]._alive)
+            continue;
+
+        int firstLed = getLED(conveyorPool[i]._startPoint);
+        int lastLed = getLED(conveyorPool[i]._endPoint);
+        for (int led = firstLed; led <= lastLed; led++)
         {
-            speed = constrain(conveyorPool[i]._speed, -MAX_PLAYER_SPEED + 1, MAX_PLAYER_SPEED - 1);
-            ss = getLED(conveyorPool[i]._startPoint);
-            ee = getLED(conveyorPool[i]._endPoint);
-            for (led = ss; led < ee; led++)
-            {
+            int n = (-led + (m / 500 / conveyorPool[i]._speed)) % levels;
 
-                n = (-led + (m / 100)) % levels;
-                if (speed < 0)
-                    n = (led + (m / 100)) % levels;
+            int b = map(n, 5, 0, 0, CONVEYOR_BRIGHTNESS);
+            if (b > 0)
+                leds[led] = CRGB(0, 0, b);
+        }
 
-                b = map(n, 5, 0, 0, CONVEYOR_BRIGHTNESS);
-                if (b > 0)
-                    leds[led] = CRGB(0, 0, b);
-            }
-
-            if (playerPosition > conveyorPool[i]._startPoint && playerPosition < conveyorPool[i]._endPoint)
-            {
-                playerPositionModifier = speed;
-            }
+        if (playerPosition >= conveyorPool[i]._startPoint && playerPosition <= conveyorPool[i]._endPoint)
+        {
+            playerPositionModifier = conveyorPool[i]._speed;
         }
     }
 }
