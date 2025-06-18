@@ -22,7 +22,7 @@ void Enemy::Spawn(int pos, int dir, int speed, int wobble)
 {
     _pos = pos;
     _dir = dir;       // 0 = left, 1 = right
-    _wobble = wobble; // 0 = no, >0 = yes, value is width of wobble
+    _wobble = wobble; // 0 = no, >0 = yes, value is half width of wobble
     _origin = pos;
     _speed = speed;
     _alive = 1;

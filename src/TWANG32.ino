@@ -906,25 +906,25 @@ void tickSpawners()
 {
     const CRGB defaultCol = CRGB(LAVA_OFF_BRIGHTNESS, LAVA_OFF_BRIGHTNESS / 1.5, 0);
     const CRGB warnCol = CRGB(LAVA_OFF_BRIGHTNESS * 2, LAVA_OFF_BRIGHTNESS * 2, 0);
-    long mm = millis();
+    unsigned long mm = millis();
     for (int s = 0; s < SPAWN_COUNT; s++)
     {
-        if (spawnPool[s].Alive() && spawnPool[s]._activate < mm)
+        if (!spawnPool[s].Alive())
+            continue;
+        if (mm - spawnPool[s]._lastSpawned > spawnPool[s]._rate + spawnPool[s]._delayOnce)
         {
-            long nextSpawn = spawnPool[s]._lastSpawned + spawnPool[s]._rate;
-            if (nextSpawn - mm < 0 || spawnPool[s]._lastSpawned == 0)
-            {
-                spawnEnemy(spawnPool[s]._pos, spawnPool[s]._dir, spawnPool[s]._sp, 0);
-                spawnPool[s]._lastSpawned = mm;
-            }
-            if (nextSpawn - mm < 800)
-            {
-                leds[getLED(spawnPool[s]._pos)] = (nextSpawn - mm) % 200 < 100 ? defaultCol : warnCol;
-            }
-            else
-            {
-                leds[getLED(spawnPool[s]._pos)] = defaultCol;
-            }
+            spawnEnemy(spawnPool[s]._pos, spawnPool[s]._dir, spawnPool[s]._sp, 0);
+            spawnPool[s]._lastSpawned = mm;
+            spawnPool[s]._delayOnce = 0;
+        }
+        long nextSpawn = spawnPool[s]._lastSpawned + spawnPool[s]._rate + spawnPool[s]._delayOnce;
+        if (nextSpawn - mm < 800)
+        {
+            leds[getLED(spawnPool[s]._pos)] = (nextSpawn - mm) % 200 < 100 ? defaultCol : warnCol;
+        }
+        else
+        {
+            leds[getLED(spawnPool[s]._pos)] = defaultCol;
         }
     }
 }

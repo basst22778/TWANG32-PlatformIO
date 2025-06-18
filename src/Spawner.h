@@ -3,34 +3,34 @@
 class Spawner
 {
 public:
-    void Spawn(int pos, int rate, int sp, int dir, long activate);
+    void Spawn(int pos, int rate_ms, int speed, int dir, int startOffset_ms);
     void Kill();
     int Alive();
     int _pos;
     int _rate;
     int _sp;
     int _dir;
-    long _lastSpawned;
-    long _activate;
+    unsigned long _lastSpawned;
+    int _delayOnce;
 
 private:
     int _alive;
 };
 
-void Spawner::Spawn(int pos, int rate, int sp, int dir, long activate)
+void Spawner::Spawn(int pos, int rate_ms, int speed, int dir, int startOffset_ms)
 {
     _pos = pos;
-    _rate = rate;
-    _sp = sp;
+    _rate = rate_ms;
+    _sp = speed;
     _dir = dir;
-    _activate = millis() + activate;
+    _lastSpawned = millis();
+    _delayOnce = startOffset_ms;
     _alive = 1;
 }
 
 void Spawner::Kill()
 {
     _alive = 0;
-    _lastSpawned = 0;
 }
 
 int Spawner::Alive()
