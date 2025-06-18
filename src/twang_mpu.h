@@ -5,23 +5,32 @@
 
 class Twang_MPU
 {
-
 public:
+	Twang_MPU(uint16_t address);
 	void initialize();
 	bool getMotion6(int16_t *xAccel, int16_t *yAccel, int16_t *zAccel, int16_t *xGyro, int16_t *yGyro, int16_t *zGyro);
 	bool verify();
 
+	uint16_t address;
+
+	static const uint16_t MPU_ADDR_DEFAULT = 0x68;
+	static const uint16_t MPU_ADDR_ALTERNATIVE = 0x69;
+
 private:
-	static const uint16_t MPU_ADDR = 0x68;
 	static const uint8_t PWR_MGMT_1 = 0x6B;
 	static const uint8_t MPU_DATA_REG_START = 0x3B;
 	static const uint8_t MPU_DATA_LEN = 14;
 	static const uint8_t MPU_DATA_WHO_AM_I = 0x75;
 };
 
+Twang_MPU::Twang_MPU(uint16_t address)
+{
+	this->address = address;
+}
+
 void Twang_MPU::initialize()
 {
-	Wire.beginTransmission(MPU_ADDR);
+	Wire.beginTransmission(address);
 	Wire.write(PWR_MGMT_1); // PWR_MGMT_1 register
 	Wire.write(0);			// set to zero (wakes up the MPU-6050)
 	Wire.endTransmission(true);
@@ -29,19 +38,19 @@ void Twang_MPU::initialize()
 
 bool Twang_MPU::verify()
 {
-	Wire.beginTransmission(MPU_ADDR);
+	Wire.beginTransmission(this->address);
 	Wire.write(MPU_DATA_WHO_AM_I);
 	Wire.endTransmission(false);
-	Wire.requestFrom(MPU_ADDR, (uint8_t)1, true); // read the whole MPU data section
-	return (Wire.read() == MPU_ADDR);
+	Wire.requestFrom(this->address, (uint8_t)1, true); // read the whole MPU data section
+	return (Wire.read() == this->address);
 }
 
 bool Twang_MPU::getMotion6(int16_t *xAccel, int16_t *yAccel, int16_t *zAccel, int16_t *xGyro, int16_t *yGyro, int16_t *zGyro)
 {
-	Wire.beginTransmission(MPU_ADDR);
+	Wire.beginTransmission(this->address);
 	Wire.write(MPU_DATA_REG_START); // starting with register 0x3B (ACCEL_XOUT_H)
 	Wire.endTransmission(false);
-	Wire.requestFrom(MPU_ADDR, MPU_DATA_LEN, true); // read the whole MPU data section
+	Wire.requestFrom(this->address, MPU_DATA_LEN, true); // read the whole MPU data section
 	unsigned long timeout = millis();
 	const unsigned long TIMEOUT_MS = 5;
 	while (Wire.available() < MPU_DATA_LEN)

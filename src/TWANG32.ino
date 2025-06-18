@@ -87,7 +87,7 @@ bool attacking = 0;         // Is the attack in progress?
 #define WIN_CLEAR_DURATION 1000
 #define WIN_OFF_DURATION 1200
 
-Twang_MPU accelgyro = Twang_MPU();
+Twang_MPU accelgyro = Twang_MPU(Twang_MPU::MPU_ADDR_DEFAULT);
 CRGB leds[VIRTUAL_LED_COUNT];
 Samples MPUAngleSamples = {0};
 Samples MPUWobbleSamples = {0};
