@@ -45,18 +45,6 @@ long lastInputTime = 0;
 
 // TODO ... move all the settings to this file.
 
-// Function prototypes
-// void reset_settings();
-void settings_init();
-void show_game_stats();
-void settings_eeprom_write();
-void settings_eeprom_read();
-void settings_processSerial(char inChar);
-void settings_fromString(char *line, int len);
-void settings_set(char code, bool hasValue, uint16_t newValue);
-void show_settings_menu();
-void reset_settings();
-
 typedef struct
 {
 	uint8_t settings_version; // stores the settings format version
@@ -79,6 +67,27 @@ typedef struct
 
 } settings_t;
 
+typedef struct settings_param_t
+{
+	char code;
+	bool hasValue;
+	uint16_t newValue;
+} settings_param_t;
+
+// Function prototypes
+// void reset_settings();
+void settings_init();
+void show_game_stats();
+void settings_eeprom_write();
+void settings_eeprom_read();
+settings_param_t settings_processSerial(char inChar);
+settings_param_t settings_fromString(char *line, int len);
+void settings_set(char code, bool hasValue, uint16_t newValue);
+void show_settings_menu();
+void reset_settings();
+
+const settings_param_t SET_PARAM_INVALID = {0};
+
 settings_t user_settings;
 
 #define READ_BUFFER_LEN 10
@@ -92,12 +101,14 @@ void settings_init()
 	show_game_stats();
 }
 
-void settings_processSerial(char inChar)
+settings_param_t settings_processSerial(char inChar)
 {
 	static char readBuffer[READ_BUFFER_LEN];
 	static unsigned int readIndex = 0;
 
 	assert(readIndex < READ_BUFFER_LEN);
+
+	settings_param_t param = SET_PARAM_INVALID;
 
 	switch (inChar)
 	{
@@ -106,7 +117,8 @@ void settings_processSerial(char inChar)
 
 	case '\n': // parse as settings
 		readBuffer[readIndex] = 0;
-		settings_fromString(readBuffer, readIndex);
+		if (readIndex > 0)
+			param = settings_fromString(readBuffer, readIndex);
 		readIndex = 0;
 		break;
 
@@ -116,9 +128,11 @@ void settings_processSerial(char inChar)
 		else
 			readBuffer[readIndex++] = inChar;
 	}
+
+	return param;
 }
 
-void settings_fromString(char *line, int len)
+settings_param_t settings_fromString(char *line, int len)
 {
 	assert(line);
 	assert(len > 0);
@@ -126,22 +140,21 @@ void settings_fromString(char *line, int len)
 
 	if (len == 1)
 	{
-		settings_set(line[0], false, 0);
-		return;
+		return {.code = line[0], .hasValue = false};
 	}
 
 	if (len < 3)
 	{
 		Serial.printf("ERROR: Malformed serial command: %s\n", line);
 		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
-		return;
+		return SET_PARAM_INVALID;
 	}
 
 	if (line[1] != '=')
 	{
 		Serial.printf("ERROR: Malformed serial command: %s\n", line);
 		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
-		return;
+		return SET_PARAM_INVALID;
 	}
 
 	for (int idx = 2; idx < len; ++idx)
@@ -149,61 +162,64 @@ void settings_fromString(char *line, int len)
 		if (!isdigit(line[idx]))
 		{
 			Serial.printf("ERROR: Malformed value in serial command: %s\n", line);
-			return;
+			return SET_PARAM_INVALID;
 		}
 	}
 
-	int val = atoi(line + 2);
-	settings_set(line[0], true, val);
+	uint16_t val = atoi(line + 2);
+	return {.code = line[0], .hasValue = true, .newValue = val};
 }
 
-void settings_set(char code, bool hasValue, uint16_t newValue)
+void settings_set(settings_param_t param)
 {
+	if (memcmp(&param, &SET_PARAM_INVALID, sizeof(param)) == 0)
+		return;
+
 	lastInputTime = millis(); // reset screensaver count
 
-	if (hasValue)
+	if (param.hasValue)
 	{
-		switch(code)
+		switch (param.code)
 		{
 			case 'C': // LED Count
-				user_settings.led_count = constrain(newValue, MIN_LEDS, MAX_LEDS);
+				user_settings.led_count = constrain(param.newValue, MIN_LEDS, MAX_LEDS);
 				settings_eeprom_write();
 				Serial.printf("Set LED count to %d\n", user_settings.led_count);
 				break;
 			case 'B': // brightness
-				user_settings.led_brightness = constrain(newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+				user_settings.led_brightness = constrain(param.newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 				FastLED.setBrightness(user_settings.led_brightness);
 				settings_eeprom_write();
 				Serial.printf("Set brightness to %d\n", user_settings.led_brightness);
 				break;
 			case 'S': // sound
-				user_settings.audio_volume = constrain(newValue, MIN_VOLUME, MAX_VOLUME);
+				user_settings.audio_volume = constrain(param.newValue, MIN_VOLUME, MAX_VOLUME);
 				settings_eeprom_write();
 				Serial.printf("Set audio volume to %d\n", user_settings.audio_volume);
 				break;
 			case 'D': // deadzone, joystick
-				user_settings.joystick_deadzone = constrain(newValue, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
+				user_settings.joystick_deadzone = constrain(param.newValue, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
 				settings_eeprom_write();
 				Serial.printf("Set deadzone to %d\n", user_settings.joystick_deadzone);
 				break;
 			case 'A': // attack threshold, joystick
-				user_settings.attack_threshold = constrain(newValue, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
+				user_settings.attack_threshold = constrain(param.newValue, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
 				settings_eeprom_write();
 				Serial.printf("Set attack threshold to %d\n", user_settings.attack_threshold);
 				break;
 			case 'L': // lives per level
-				user_settings.lives_per_level = constrain(newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
+				user_settings.lives_per_level = constrain(param.newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
 				settings_eeprom_write();
 				Serial.printf("Set lives to %d\n", user_settings.lives_per_level);
 				break;
 			default:
-				Serial.printf("ERROR: Unknown setting %c=%d\n", code, newValue);
+				Serial.printf("ERROR: Unknown setting %c=%d\n", param.code, param.newValue);
 				return;
 		}
 	}
 	else
 	{
-		switch (code)
+		switch (param.code)
 		{
 		case '?': // show stats and settings
 			show_game_stats();
@@ -225,7 +241,7 @@ void settings_set(char code, bool hasValue, uint16_t newValue)
 			ESP.restart();
 			break;
 		default:
-			Serial.printf("ERROR: Unknown setting: %c\n", code);
+			Serial.printf("ERROR: Unknown setting: %c\n", param.code);
 		}
 	}
 

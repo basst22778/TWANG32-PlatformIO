@@ -236,7 +236,17 @@ void loop()
     ap_client_check(); // check for web client
 	if (Serial.available())
 	{
-		settings_processSerial(Serial.read());
+		settings_param_t param = settings_processSerial(Serial.read());
+        if (param.code == 'V' && param.hasValue)
+        {
+            Serial.printf("Skipping to level %d...\n", param.newValue);
+            levelNumber = param.newValue;
+            loadLevel(levelNumber);
+        }
+        else
+        {
+            settings_set(param);
+        }
 	}
 
     if (stage == PLAY)
