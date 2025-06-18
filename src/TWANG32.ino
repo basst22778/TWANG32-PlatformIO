@@ -452,13 +452,17 @@ void loadLevel(int num)
     You can add any of the following features.
     See function descriptions (comments above function implementation) for more info.
 
-    spawnEnemy(): You can add up to 10 (ENEMY_COUNT) enemies
+    spawnEnemy(): You can add up to 10 (ENEMY_COUNT) static or moving enemies.
 
-    spawnPool[index].Spawn(): This generates and endless source of new enemies. 2 pools max (index=0,1)
+    spawnSpawner(): This generates and endless source of new enemies. 
+      5 (SPAWN_COUNT) pools max
 
-    spawnLava(): You can create 4 pools of lava.
+    spawnLava(): You can create 5 (LAVA_COUNT) pools of lava. 
+      Lava will toggle on and off in an interval. 
+      Lava kills the player and enemies when on.
 
-    spawnConveyor(): You can create 2 conveyors.
+    spawnConveyor(): You can create 2 (CONVEYOR_COUNT) conveyors. 
+      Conveyors move the player at a constant speed.
 
     ===== Other things you can adjust per level ================
 
@@ -510,18 +514,18 @@ void loadLevel(int num)
         spawnEnemy(900, 0, 1, 0);
         break;
     case SPAWNER_INTRO:
-        spawnPool[0].Spawn(950, 4000, 2, 0, -3000);
+        spawnSpawner(950, 4000, 2, 0, -3000);
         break;
     case LAVA_INTRO:
         spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnEnemy(350, 0, 1, 0);
-        spawnPool[0].Spawn(950, 4500, 3, 0, -3500);
+        spawnSpawner(950, 4500, 3, 0, -3500);
         break;
     case LAVA_MOVING:
         spawnLava(700, 800, 2000, 2000, 0, Lava::OFF, 0, -0.5);
         spawnEnemy(450, 0, 1, 0);
         spawnEnemy(950, 0, 1, 0);
-        spawnPool[0].Spawn(950, 4500, 3, 0, -2000);
+        spawnSpawner(950, 4500, 3, 0, -2000);
         break;
     case LAVA_SPREADING:
         spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.25, 0);
@@ -547,7 +551,7 @@ void loadLevel(int num)
         playerPosition = 200;
         spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
         spawnEnemy(500, 0, 1, 0);
-        spawnPool[0].Spawn(950, 3000, 3, 0, -1000);
+        spawnSpawner(950, 3000, 3, 0, -1000);
         break;
     case CONVEYOR_INTRO:
         spawnConveyor(100, 600, -6);
@@ -567,43 +571,43 @@ void loadLevel(int num)
     case LAVA_SPREAD_FALL:
         spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.2, -0.5);
         spawnEnemy(350, 0, 1, 0);
-        spawnPool[0].Spawn(950, 5500, 3, 0, 0);
+        spawnSpawner(950, 5500, 3, 0, 0);
         break;
     case SPAWNER_TRAIN:
-        spawnPool[0].Spawn(900, 1300, 2, 0, 0);
+        spawnSpawner(900, 1300, 2, 0, 0);
         break;
     case SPAWNER_TRAIN_SKINNY:
         attack_width = 32;
-        spawnPool[0].Spawn(900, 1800, 2, 0, 0);
+        spawnSpawner(900, 1800, 2, 0, 0);
         break;
     case SPAWNER_SPLIT:
-        spawnPool[0].Spawn(550, 1500, 2, 0, 0);
-        spawnPool[1].Spawn(550, 1500, 2, 1, 0);
+        spawnSpawner(550, 1500, 2, 0, 0);
+        spawnSpawner(550, 1500, 2, 1, 0);
         break;
     case SPAWNER_SPLIT_LAVA:
-        spawnPool[0].Spawn(500, 1200, 2, 0, 0);
-        spawnPool[1].Spawn(500, 1200, 2, 1, 0);
+        spawnSpawner(500, 1200, 2, 0, 0);
+        spawnSpawner(500, 1200, 2, 1, 0);
         spawnLava(900, 950, 2200, 800, 2000, Lava::OFF, 0, 0);
         break;
     case LAVA_RUN:
         spawnLava(195, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnLava(400, 500, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnLava(600, 700, 2000, 2000, 0, Lava::OFF, 0, 0);
-        spawnPool[0].Spawn(950, 3800, 4, 0, 0);
+        spawnSpawner(950, 3800, 4, 0, 0);
         break;
     case CONVEYOR_ENEMY_SIN:
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
-        spawnPool[0].Spawn(950, 5500, 4, 0, 3000);
-        spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
+        spawnSpawner(950, 5500, 4, 0, 3000);
+        spawnSpawner(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -4);
         break;
     case CONVEYOR_ENEMY_FAST:
         spawnEnemy(800, 1, 7, 275);
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
-        spawnPool[0].Spawn(950, 3000, 4, 0, 3000);
-        spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
+        spawnSpawner(950, 3000, 4, 0, 3000);
+        spawnSpawner(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -6);
         break;
     case BOSS:
@@ -630,7 +634,7 @@ void moveBoss()
     if (boss._lives == 1)
         spawnSpeed = 1000;
     spawnPool[0].Spawn(boss._pos, spawnSpeed, 3, 0, 0);
-    spawnPool[1].Spawn(boss._pos, spawnSpeed, 3, 1, 0);
+    spawnSpawner(boss._pos, spawnSpeed, 3, 1, 0);
 }
 
 /* ======================== spawn Functions =====================================
@@ -658,6 +662,23 @@ void spawnEnemy(int pos, int dir, int speed, int wobble)
     }
 }
 
+// @param pos: The location the enemies with be generated from (in game coordinates, usually 0..1000)
+// @param rate_ms: The time in milliseconds between each new enemy
+// @param speed: How fast they move. Typically 1 to 4.
+// @param dir: Directions they go 0=down, 1=towards goal
+// @param startOffset_ms: The delay in milliseconds before the first enemy (added to rate, can be negative)
+void spawnSpawner(int pos, int rate_ms, int speed, int dir, int startOffset_ms)
+{
+    for (int s = 0; s < SPAWN_COUNT; s++)
+    {
+        if (!spawnPool[s].Alive())
+        {
+            spawnPool[s].Spawn(pos, rate_ms, speed, dir, startOffset_ms);
+            return;
+        }
+    }
+}
+
 // @param left: the lower end of the lava pool (in game coordinates, usually 0..1000)
 // @param right: the upper end of the lava pool
 // @param ontime: How long the lava stays on in milliseconds
@@ -680,7 +701,7 @@ void spawnLava(int left, int right, int ontime, int offtime, int offset, int sta
 
 // @param startPoint: The close end of the conveyor (in game coordinates 0..1000)
 // @param endPoint: The far end of the conveyor
-// @param direction(speed): positive = away, negative = towards you (must be less than +/- player speed)
+// @param dir: positive = away, negative = towards you (must be less than +/- MAX_PLAYER_SPEED=10)
 void spawnConveyor(int startPoint, int endPoint, int dir)
 {
     for (int i = 0; i < CONVEYOR_COUNT; i++)
@@ -1007,7 +1028,6 @@ bool tickParticles()
 
 void tickConveyors()
 {
-
     // TODO should the visual speed be proportional to the conveyor speed?
 
     int b, speed, n, i, ss, ee, led;
