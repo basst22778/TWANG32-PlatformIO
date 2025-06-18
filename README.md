@@ -95,40 +95,4 @@ The game also has 3 regular LEDs for life indicators (the player gets 3 lives wh
 **USE_GRAVITY** 0/1 to set if particles created by the player getting killed should fall towards the start point, the `BEND_POINT` variable can be set to mark the point at which the strip of LEDs goes from being horizontal to vertical. The game is 1000 units wide (regardless of number of LED's) so 500 would be the mid point. If this is confusing just set `USE_GRAVITY` to 0.
 
 ## Modifying / Creating levels
-Find the `loadLevel()` function, in there you can see a switch statement with the 10 levels I created.
-They all call different functions and variables to setup the level. Each one is described below:
-
-**playerPosition;** Where the player starts on the 0 to 1000 line. If not set it defaults to 0. I set it to 200 in the first level so the player can see movement even if the first action they take is to push the joystick left
-
-**spawnEnemy(position, direction, speed, wobble);** (10 enemies max)
-* position: 0 to 1000
-* direction: 0/1, initial direction of travel
-* speed: >=0, speed of the enemy, remember the game is 1000 wide and runs at 60fps. I recommend between 1 and 4
-* wobble: 0=regular moving enemy, 1=sine wave enemy, in this case speed sets the width of the wave
-
-**spawnPool[poolNumber].Spawn(position, rate, speed, direction);** (2 spawners max)
-* A spawn pool is a point which spawns enemies forever
-* position: 0 to 1000
-* rate: milliseconds between spawns, 1000 = 1 second
-* speed: speed of the enemis it spawns
-* direction: 0=towards start, 1=away from start
-
-**spawnLava(startPoint, endPoint, ontime, offtime, offset);** (4 lava pools max)
-* startPoint: 0 to 1000
-* endPoint: 0 to 1000, combined with startPoint this sets the location and size of the lava
-* ontime: How long (ms) the lava is ON for
-* offtime: How long the lava is ON for
-* offset: How long (ms) after the level starts before the lava turns on, use this to create patterns with multiple lavas
-* grow: This specifies the rate of growth. Use 0 for no growth. Reasonable growth is 0.1 to 0.5
-* flow: This specifies the rate/direction of flow. Reasonable numbers are 0.2 to 0.8 
-
-**spawnConveyor(startPoint, endPoint, speed);** (2 conveyors max)
-* startPoint, endPoint: Same as lava
-* speed: The direction and speed of the travel. Negative moves to base and positive moves towards exit. Must be less than +/- max player speed.
-
-**spawnBoss();** (only one, don't edit boss level)
-<<<<<<< HEAD
-* There are no parameters for a boss, they always spawn in the same place and have 3 lives. Tweak the values of Boss.h to modify
-=======
-* There are no parameters for a boss, they always spawn in the same place and have 3 lives. Tweak the values of Boss.h to modify
->>>>>>> origin/master
+Find the `loadLevel()` function, in there you can see a switch statement with the existing levels and a comment with more description for creating levels.

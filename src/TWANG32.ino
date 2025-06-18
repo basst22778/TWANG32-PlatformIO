@@ -453,50 +453,23 @@ void loadLevel(int num)
     when adding features. All time values are specified in milliseconds (1/1000 of a second)
 
     You can add any of the following features.
+    See function description for more info.
 
-    Enemies: You add up to 10 enemies with the spawnEnemy(...) functions.
-      spawnEnemy(position, direction, speed, wobble);
-        position: Where the enemy starts
-        direction: If it moves, what direction does it go 0=down, 1=away
-        speed: How fast does it move. Typically 1 to 4.
-        wobble: 0=regular movement, 1=bouncing back and forth use the speed value
-          to set the length of the wobble.
+    spawnEnemy(): You can add up to 10 (ENEMY_COUNT) enemies
 
-    Spawn Pools: This generates and endless source of new enemies. 2 pools max
-      spawnPool[index].Spawn(position, rate, speed, direction, activate);
-        index: You can have up to 2 pools, use an index of 0 for the first and 1 for the second.
-        position: The location the enemies with be generated from.
-        rate: The time in milliseconds between each new enemy
-        speed: How fast they move. Typically 1 to 4.
-        direction: Directions they go 0=down, 1=away
-        activate: The delay in milliseconds before the first enemy
+    spawnPool[index].Spawn(): This generates and endless source of new enemies. 2 pools max (index=0,1)
 
-    Lava: You can create 4 pools of lava.
-      spawnLava(left, right, ontime, offtime, offset, state, grow, flow);
-        left: the lower end of the lava pool
-        right: the upper end of the lava pool
-        ontime: How long the lave stays on.
-        offset: the delay before the first switch
-        state: does it start on or off
-        grow: This specifies the rate of growth. Use 0 for no growth. Reasonable growth is 0.1 to 0.5
-        flow: This specifies the rate/direction of flow. Reasonable numbers are 0.2 to 0.8
+    spawnLava(): You can create 4 pools of lava.
 
-    Conveyor: You can create 2 conveyors.
-      spawnConveyor(startPoint, endPoint, direction)
-        startPoint: The close end of the conveyor
-        endPoint: The far end of the conveyor
-        direction(speed): positive = away, negative = towards you (must be less than +/- player speed)
+    spawnConveyor(): You can create 2 conveyors.
 
     ===== Other things you can adjust per level ================
 
-      Player Start position:
-        playerPosition = xxx;
+    Player Start position (0..1000):
+      playerPosition = xxx; 
 
-
-      The size of the TWANG attack
-        attack_width = xxx;
-
-
+    The size of the TWANG attack
+      attack_width = xxx;
     */
 
     // TODO: Levels with conveyor and lava
@@ -661,6 +634,10 @@ void moveBoss()
 
    ==============================================================================
 */
+// @param pos: Where the enemy starts (in game coordinates, usually 0..1000)
+// @param dir: If it moves, what direction does it go 0=down, 1=away
+// @param speed: How fast does it move. Typically 1 to 4.
+// @param wobble: 0=regular movement, >0 set length of bouncing back and forth in a sine pattern
 void spawnEnemy(int pos, int dir, int speed, int wobble)
 {
     for (int e = 0; e < ENEMY_COUNT; e++)
@@ -674,6 +651,14 @@ void spawnEnemy(int pos, int dir, int speed, int wobble)
     }
 }
 
+// @param left: the lower end of the lava pool (in game coordinates, usually 0..1000)
+// @param right: the upper end of the lava pool
+// @param ontime: How long the lava stays on in milliseconds
+// @param offtime: How long the lava is off in milliseconds
+// @param offset: How long (ms) after the level starts before the lava turns on, use this to create patterns with multiple lavas
+// @param state: does it start on or off (Lava::ON or Lava::OFF)
+// @param grow: This specifies the rate of growth. Use 0 for no growth. Reasonable growth is 0.1 to 0.5
+// @param flow: This specifies the rate/direction of flow. Reasonable numbers are 0.2 to 0.8 (positive or negative)
 void spawnLava(int left, int right, int ontime, int offtime, int offset, int state, float grow, float flow)
 {
     for (int i = 0; i < LAVA_COUNT; i++)
@@ -686,6 +671,9 @@ void spawnLava(int left, int right, int ontime, int offtime, int offset, int sta
     }
 }
 
+// @param startPoint: The close end of the conveyor (in game coordinates 0..1000)
+// @param endPoint: The far end of the conveyor
+// @param direction(speed): positive = away, negative = towards you (must be less than +/- player speed)
 void spawnConveyor(int startPoint, int endPoint, int dir)
 {
     for (int i = 0; i < CONVEYOR_COUNT; i++)
