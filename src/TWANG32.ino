@@ -440,20 +440,17 @@ void loadLevel(int num)
     playerPosition = 0;
 
     /* ==== Level Editing Guide ===============
-    Level creation is done by adding to or editing the switch statement below
+    Level creation is done by adding to or editing the switch statement below.
 
-    You can add as many levels as you want but you must have a "case"
-    for each level. The case numbers must start at 0 and go up without skipping any numbers.
-
-    Don't edit case 0 or the last (boss) level. They are special cases and editing them could
-    break the code.
+    Add your level to the enum, then add a case statement for it in the switch.
+    The order of levels in the enum determines their order in game. 
 
     TWANG uses a virtual 1000 LED grid. It will then scale that number to your strip, so if you
     want something in the middle of your strip use the number 500. Consider the size of your strip
     when adding features. All time values are specified in milliseconds (1/1000 of a second)
 
     You can add any of the following features.
-    See function description for more info.
+    See function descriptions (comments above function implementation) for more info.
 
     spawnEnemy(): You can add up to 10 (ENEMY_COUNT) enemies
 
@@ -474,47 +471,69 @@ void loadLevel(int num)
 
     // TODO: Levels with conveyor and lava
 
+    enum LEVELS {
+        INTRO=0,
+        ENEMY_INTRO,
+        SPAWNER_INTRO,
+        LAVA_INTRO,
+        LAVA_MOVING,
+        LAVA_SPREADING,
+        ENEMY_SIN_INTRO,
+        ENEMY_SIN_SWARM,
+        LAVA_MOVING_UP,
+        CONVEYOR_INTRO,
+        CONVEYOR_ENEMIES,
+        LAVA_SPREAD_FALL,
+        SPAWNER_TRAIN,
+        SPAWNER_TRAIN_SKINNY,
+        SPAWNER_SPLIT,
+        SPAWNER_SPLIT_LAVA,
+        LAVA_RUN,
+        CONVEYOR_ENEMY_SIN,
+        CONVEYOR_ENEMY_FAST,
+        BOSS, // This should always be the last valid level!
+    };
+
+    if (num < 0 || num >= BOSS)
+    {
+        Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\n", num);
+        num = 0;
+    }
+
     switch (num)
     {
-    case 0: // basic introduction
+    case INTRO: 
         playerPosition = 200;
         spawnEnemy(1, 0, 0, 0);
         break;
-    case 1:
-        // Slow moving enemy
+    case ENEMY_INTRO:
         spawnEnemy(900, 0, 1, 0);
         break;
-    case 2:
-        // Spawning enemies just before exit every 2 seconds
+    case SPAWNER_INTRO:
         spawnPool[0].Spawn(950, 4000, 2, 0, -3000);
         break;
-    case 3:
-        // Lava intro
+    case LAVA_INTRO:
         spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnEnemy(350, 0, 1, 0);
         spawnPool[0].Spawn(950, 4500, 3, 0, -3500);
         break;
-    case 4:
-        // intro to moving lava (down)
+    case LAVA_MOVING:
         spawnLava(700, 800, 2000, 2000, 0, Lava::OFF, 0, -0.5);
         spawnEnemy(450, 0, 1, 0);
         spawnEnemy(950, 0, 1, 0);
         spawnPool[0].Spawn(950, 4500, 3, 0, -2000);
         break;
-    case 5:
-        // lava spreading
+    case LAVA_SPREADING:
         spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.25, 0);
         spawnLava(800, 850, 2000, 2000, 0, Lava::OFF, 0.25, 0);
         spawnEnemy(450, 0, 1, 0);
         spawnEnemy(900, 0, 2, 0);
         break;
-    case 6:
-        // Sin wave enemy
+    case ENEMY_SIN_INTRO:
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
         break;
-    case 7:
-        // Sin enemy swarm
+    case ENEMY_SIN_SWARM:
         spawnEnemy(700, 1, 7, 275); // 425..975
         spawnEnemy(600, 1, 5, 300); // 300..900
 
@@ -524,21 +543,18 @@ void loadLevel(int num)
         spawnEnemy(500, 1, 7, 350); // 150..800
         spawnEnemy(450, 1, 3, 150); // 300..600
         break;
-    case 8:
-        // lava moving up
+    case LAVA_MOVING_UP:
         playerPosition = 200;
         spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
         spawnEnemy(500, 0, 1, 0);
         spawnPool[0].Spawn(950, 3000, 3, 0, -1000);
         break;
-    case 9:
-        // Conveyor
+    case CONVEYOR_INTRO:
         spawnConveyor(100, 600, -6);
         spawnEnemy(650, 0, 0, 0);
         spawnEnemy(800, 1, 1, 0);
         break;
-    case 10:
-        // Conveyor of enemies
+    case CONVEYOR_ENEMIES:
         spawnConveyor(50, 1000, 6);
         spawnEnemy(300, 0, 0, 0);
         spawnEnemy(400, 0, 0, 0);
@@ -548,45 +564,41 @@ void loadLevel(int num)
         spawnEnemy(800, 0, 0, 0);
         spawnEnemy(900, 0, 0, 0);
         break;
-    case 11:
-        // lava spread and fall
+    case LAVA_SPREAD_FALL:
         spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.2, -0.5);
         spawnEnemy(350, 0, 1, 0);
         spawnPool[0].Spawn(950, 5500, 3, 0, 0);
         break;
-    case 12: // spawn train;
+    case SPAWNER_TRAIN:
         spawnPool[0].Spawn(900, 1300, 2, 0, 0);
         break;
-    case 13: // spawn train skinny attack width;
+    case SPAWNER_TRAIN_SKINNY:
         attack_width = 32;
         spawnPool[0].Spawn(900, 1800, 2, 0, 0);
         break;
-    case 14: // evil fast split spawner
+    case SPAWNER_SPLIT:
         spawnPool[0].Spawn(550, 1500, 2, 0, 0);
         spawnPool[1].Spawn(550, 1500, 2, 1, 0);
         break;
-    case 15: // split spawner with exit blocking lava
+    case SPAWNER_SPLIT_LAVA:
         spawnPool[0].Spawn(500, 1200, 2, 0, 0);
         spawnPool[1].Spawn(500, 1200, 2, 1, 0);
         spawnLava(900, 950, 2200, 800, 2000, Lava::OFF, 0, 0);
         break;
-    case 16:
-        // Lava run
+    case LAVA_RUN:
         spawnLava(195, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnLava(400, 500, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnLava(600, 700, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnPool[0].Spawn(950, 3800, 4, 0, 0);
         break;
-    case 17:
-        // Sin enemy #2 practice (slow conveyor)
+    case CONVEYOR_ENEMY_SIN:
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
         spawnPool[0].Spawn(950, 5500, 4, 0, 3000);
         spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -4);
         break;
-    case 18:
-        // Sin enemy #2 (fast conveyor)
+    case CONVEYOR_ENEMY_FAST:
         spawnEnemy(800, 1, 7, 275);
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
@@ -594,15 +606,10 @@ void loadLevel(int num)
         spawnPool[1].Spawn(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -6);
         break;
-    case 19: // (don't edit last level)
+    case BOSS:
         // Boss this should always be the last level
         spawnBoss();
         break;
-    default:
-        Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\n", num);
-        playerPosition = 200;
-        spawnEnemy(1, 0, 0, 0);
-        return;
     }
     lastInputTime = stageStartTime = millis();
     stage = PLAY;
