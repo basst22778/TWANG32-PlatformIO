@@ -112,7 +112,7 @@ Spawner spawnPool[SPAWN_COUNT] = {
 Lava lavaPool[LAVA_COUNT] = {
     Lava(), Lava(), Lava(), Lava()};
 
-#define CONVEYOR_COUNT 2
+#define CONVEYOR_COUNT 4
 Conveyor conveyorPool[CONVEYOR_COUNT] = {
     Conveyor(), Conveyor()};
 
@@ -461,7 +461,7 @@ void loadLevel(int num)
       Lava will toggle on and off in an interval. 
       Lava kills the player and enemies when on.
 
-    spawnConveyor(): You can create 2 (CONVEYOR_COUNT) conveyors. 
+    spawnConveyor(): You can create 4 (CONVEYOR_COUNT) conveyors. 
       Conveyors move the player at a constant speed.
 
     ===== Other things you can adjust per level ================
@@ -493,6 +493,7 @@ void loadLevel(int num)
         SPAWNER_SPLIT,
         SPAWNER_SPLIT_LAVA,
         LAVA_RUN,
+        CONVEYOR_LAVA,
         CONVEYOR_ENEMY_SIN,
         CONVEYOR_ENEMY_FAST,
         BOSS, // This should always be the last valid level!
@@ -590,10 +591,18 @@ void loadLevel(int num)
         spawnLava(900, 950, 2200, 800, 2000, Lava::OFF, 0, 0);
         break;
     case LAVA_RUN:
-        spawnLava(195, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
+        spawnLava(200, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
         spawnLava(400, 500, 2000, 2000, 0, Lava::OFF, 0, 0);
-        spawnLava(600, 700, 2000, 2000, 0, Lava::OFF, 0, 0);
+        spawnLava(600, 700, 1000, 1000, 0, Lava::OFF, 0, 0);
         spawnSpawner(950, 3800, 4, 0, 0);
+        break;
+    case CONVEYOR_LAVA:
+        spawnConveyor(100, 300, -4);
+        spawnLava(300, 400, 2000, 2000, 0, Lava::OFF, 0, 0);
+        spawnConveyor(400, 600, -6);
+        spawnLava(600, 700, 2000, 2000, 0, Lava::OFF, 0, 0);
+        spawnConveyor(700, 900, 6);
+        spawnLava(900, 990, 3000, 1000, 0, Lava::OFF, 0, 0);
         break;
     case CONVEYOR_ENEMY_SIN:
         spawnEnemy(700, 1, 7, 275);
