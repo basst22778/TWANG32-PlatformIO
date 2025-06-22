@@ -115,6 +115,10 @@ settings_param_t settings_processSerial(char inChar)
 	case '\r': // ignore carriage return
 		break;
 
+	case '\b':
+		if (readIndex > 0) readIndex--;
+		break;
+
 	case '\n': // parse as settings
 		readBuffer[readIndex] = 0;
 		if (readIndex > 0)
@@ -145,14 +149,14 @@ settings_param_t settings_fromString(char *line, int len)
 
 	if (len < 3)
 	{
-		Serial.printf("ERROR: Malformed serial command: %s\n", line);
+		Serial.printf("ERROR: Malformed serial command: %s\r\n", line);
 		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
 		return SET_PARAM_INVALID;
 	}
 
 	if (line[1] != '=')
 	{
-		Serial.printf("ERROR: Malformed serial command: %s\n", line);
+		Serial.printf("ERROR: Malformed serial command: %s\r\n", line);
 		Serial.println("Valid commands need to be in the form X or X=nn. Enter ? for help.");
 		return SET_PARAM_INVALID;
 	}
@@ -161,7 +165,7 @@ settings_param_t settings_fromString(char *line, int len)
 	{
 		if (!isdigit(line[idx]))
 		{
-			Serial.printf("ERROR: Malformed value in serial command: %s\n", line);
+			Serial.printf("ERROR: Malformed value in serial command: %s\r\n", line);
 			return SET_PARAM_INVALID;
 		}
 	}
@@ -184,36 +188,36 @@ void settings_set(settings_param_t param)
 			case 'C': // LED Count
 				user_settings.led_count = constrain(param.newValue, MIN_LEDS, MAX_LEDS);
 				settings_eeprom_write();
-				Serial.printf("Set LED count to %d\n", user_settings.led_count);
+				Serial.printf("Set LED count to %d\r\n", user_settings.led_count);
 				break;
 			case 'B': // brightness
 				user_settings.led_brightness = constrain(param.newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 				FastLED.setBrightness(user_settings.led_brightness);
 				settings_eeprom_write();
-				Serial.printf("Set brightness to %d\n", user_settings.led_brightness);
+				Serial.printf("Set brightness to %d\r\n", user_settings.led_brightness);
 				break;
 			case 'S': // sound
 				user_settings.audio_volume = constrain(param.newValue, MIN_VOLUME, MAX_VOLUME);
 				settings_eeprom_write();
-				Serial.printf("Set audio volume to %d\n", user_settings.audio_volume);
+				Serial.printf("Set audio volume to %d\r\n", user_settings.audio_volume);
 				break;
 			case 'D': // deadzone, joystick
 				user_settings.joystick_deadzone = constrain(param.newValue, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
 				settings_eeprom_write();
-				Serial.printf("Set deadzone to %d\n", user_settings.joystick_deadzone);
+				Serial.printf("Set deadzone to %d\r\n", user_settings.joystick_deadzone);
 				break;
 			case 'A': // attack threshold, joystick
 				user_settings.attack_threshold = constrain(param.newValue, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
 				settings_eeprom_write();
-				Serial.printf("Set attack threshold to %d\n", user_settings.attack_threshold);
+				Serial.printf("Set attack threshold to %d\r\n", user_settings.attack_threshold);
 				break;
 			case 'L': // lives per level
 				user_settings.lives_per_level = constrain(param.newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
 				settings_eeprom_write();
-				Serial.printf("Set lives to %d\n", user_settings.lives_per_level);
+				Serial.printf("Set lives to %d\r\n", user_settings.lives_per_level);
 				break;
 			default:
-				Serial.printf("ERROR: Unknown setting %c=%d\n", param.code, param.newValue);
+				Serial.printf("ERROR: Unknown setting %c=%d\r\n", param.code, param.newValue);
 				return;
 		}
 	}
@@ -241,7 +245,7 @@ void settings_set(settings_param_t param)
 			ESP.restart();
 			break;
 		default:
-			Serial.printf("ERROR: Unknown setting: %c\n", param.code);
+			Serial.printf("ERROR: Unknown setting: %c\r\n", param.code);
 		}
 	}
 
@@ -273,43 +277,26 @@ void reset_settings()
 
 void show_settings_menu()
 {
-	Serial.println("\r\n====== TWANG Settings Menu ========");
+	Serial.println();
+	Serial.println("====== TWANG Settings Menu ========");
 	Serial.println("=    Current values are shown     =");
 	Serial.println("=   Send new values like B=150    =");
-	Serial.println("=     with a carriage return      =");
+	Serial.println("=          with a newline         =");
 	Serial.println("===================================");
 
-	Serial.print("\r\nC=");
-	Serial.print(user_settings.led_count);
-
-	Serial.print(" (LED Count 60-");
-	Serial.print(MAX_LEDS);
-	Serial.println(")");
-
-	Serial.print("B=");
-	Serial.print(user_settings.led_brightness);
-	Serial.println(" (LED Brightness 5-255)");
-
-	Serial.print("S=");
-	Serial.print(user_settings.audio_volume);
-	Serial.println(" (Sound Volume 0-255)");
-
-	Serial.print("D=");
-	Serial.print(user_settings.joystick_deadzone);
-	Serial.println(" (Joystick Deadzone 3-12)");
-
-	Serial.print("A=");
-	Serial.print(user_settings.attack_threshold);
-	Serial.println(" (Attack Sensitivity 20000-35000)");
-
-	Serial.print("L=");
-	Serial.print(user_settings.lives_per_level);
-	Serial.println(" (Lives per Level (3-9))");
-
+	Serial.println();
+	Serial.printf("C=%d (LED Count %d-%d)\r\n", user_settings.led_count, MIN_LEDS, MAX_LEDS);
+	Serial.printf("B=%d (LED Brightness %d-%d)\r\n", user_settings.led_brightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+	Serial.printf("S=%d (Sound volume %d-%d)\r\n", user_settings.audio_volume, MIN_VOLUME, MAX_VOLUME);
+	Serial.printf("D=%d (Joystick deadzone %d-%d)\r\n", user_settings.joystick_deadzone, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
+	Serial.printf("A=%d (Attack sensitivity %d-%d)\r\n", user_settings.attack_threshold, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
+	Serial.printf("L=%d (Lives per level %d-%d)\r\n", user_settings.lives_per_level, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
+	
 	Serial.println("\r\n(Send...)");
 	Serial.println("  ? to show current settings");
-	Serial.println("  R to reset everything to defaults)");
-	Serial.println("  P to reset play statistics)");
+	Serial.println("  R to reset everything to defaults");
+	Serial.println("  P to reset play statistics");
+	Serial.println("  ! to restart ESP");
 }
 
 void show_game_stats()

@@ -202,7 +202,7 @@ void setup()
     accelgyro.initialize();
     gyroConnected = accelgyro.verify();
     gyroLastCheckMs = millis();
-    Serial.printf("Gyro is %sconncted!\n", gyroConnected ? "" : "NOT ");
+    Serial.printf("Gyro is %sconncted!\r\n", gyroConnected ? "" : "NOT ");
 
 #ifdef USE_NEOPIXEL
     Serial.print("\r\nCompiled for WS2812B (Neopixel) LEDs");
@@ -239,7 +239,7 @@ void loop()
 		settings_param_t param = settings_processSerial(Serial.read());
         if (param.code == 'V' && param.hasValue)
         {
-            Serial.printf("Skipping to level %d...\n", param.newValue);
+            Serial.printf("Skipping to level %d...\r\n", param.newValue);
             levelNumber = param.newValue;
             loadLevel(levelNumber);
         }
@@ -473,8 +473,6 @@ void loadLevel(int num)
       attack_width = xxx;
     */
 
-    // TODO: Levels with conveyor and lava
-
     enum LEVELS {
         INTRO=0,
         ENEMY_INTRO,
@@ -501,7 +499,7 @@ void loadLevel(int num)
 
     if (num < 0 || num >= BOSS)
     {
-        Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\n", num);
+        Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\r\n", num);
         num = 0;
     }
 
@@ -1400,8 +1398,8 @@ bool getInput()
     joystickWobble = abs(sample_highest(&MPUWobbleSamples));
 
 #ifdef JOYSTICK_DEBUG
-    // Serial.print("tilt:"); Serial.println(joystickTilt);
-    // Serial.print("wobble:"); Serial.println(joystickWobble);
+    Serial.print("tilt:"); Serial.println(joystickTilt);
+    Serial.print("wobble:"); Serial.println(joystickWobble);
 #endif
 
     return true;
