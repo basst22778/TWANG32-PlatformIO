@@ -629,15 +629,15 @@ void loadLevel(int num)
         spawnLava(900, 990, 3000, 1000, 0, Lava::OFF, 0, 0);
         break;
     case CONVEYOR_ENEMY_SIN:
-        spawnEnemy(800, 1, 7, 275);
         spawnEnemy(700, 1, 7, 275);
-        spawnEnemy(500, 1, 5, 250);
+        spawnEnemy(600, 1, 5, 250);
+        spawnEnemy(400, 1, 6, 275);
         spawnSpawner(950, 5500, 4, 0, 3000);
         spawnSpawner(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -4);
         break;
     case BOSS:
-        // Boss this should always be the last level
+        // this should always be the last level
         spawnBoss();
         break;
     }
@@ -1357,41 +1357,6 @@ void save_game_stats(bool bossKill)
 }
 
 // ---------------------------------
-// --------- SCREENSAVER -----------
-// ---------------------------------
-void screenSaverTick()
-{
-    long mm = millis();
-    int mode = (mm / 30000) % 7;
-
-    SFXcomplete(); // turn off sound...play testing showed this to be a problem
-
-    switch (mode)
-    {
-    case 0:
-        Fire2012();
-        break;
-    case 1:
-        sinelon();
-        break;
-    case 2:
-        juggle();
-        break;
-    case 3:
-        LED_march();
-        break;
-    case 4:
-        colorWipes();
-        break;
-    case 5:
-        colorWheel();
-        break;
-    default:
-        random_LED_flashes();
-    }
-}
-
-// ---------------------------------
 // ----------- JOYSTICK ------------
 // ---------------------------------
 // returns success (if at least the main gyro could be read)
@@ -1577,6 +1542,43 @@ long map_constrain(long x, long in_min, long in_max, long out_min, long out_max)
         x = constrain(x, in_max, in_min);
     }
     return map(x, in_min, in_max, out_min, out_max);
+}
+
+// ---------------------------------
+// --------- SCREENSAVER -----------
+// ---------------------------------
+typedef enum Screensavers
+{
+    FIRE,
+    SINELON,
+    JUGGLE,
+    LED_MARCH,
+    COLOR_WIPE,
+    COLOR_WHEEL,
+    COLOR_CIRCLE,
+    RANDOM_FLASHES,
+
+    SAVE_EOL
+} Screensavers;
+
+void screenSaverTick()
+{
+    long mm = millis();
+    Screensavers mode = Screensavers((mm / 30000) % SAVE_EOL);
+
+    SFXcomplete(); // turn off sound...play testing showed this to be a problem
+
+    switch (mode)
+    {
+    case FIRE: Fire2012(); break;
+    case SINELON: sinelon(); break;
+    case JUGGLE: juggle(); break;
+    case LED_MARCH: LED_march(); break;
+    case COLOR_WIPE: colorWipes(); break;
+    case COLOR_WHEEL: colorWheel(); break;
+    case COLOR_CIRCLE: colorCircle(); break; 
+    case RANDOM_FLASHES: random_LED_flashes(); break;
+    }
 }
 
 // Fire2012 by Mark Kriegsman, July 2012
@@ -1801,12 +1803,24 @@ int colorWipe(CRGB color, int wait)
     return 0;
 }
 
+// NOTE: This looks quite choppy with low brightness
 void colorWheel()
 {
     // cycle hue of each LED with offset between the LEDs
     long mm = millis();
     for (int pos = 0; pos < user_settings.led_count; pos++)
     {
-        leds[pos] = CHSV((mm / 10) - (pos * 255 / user_settings.led_count), 255, 128);
+        leds[pos] = CHSV((mm / 10) - (pos * 255 / user_settings.led_count), 255, 255);
+    }
+}
+
+// NOTE: This looks quite choppy with low brightness
+void colorCircle()
+{
+    // cycle hue of whole stripe
+    long mm = millis();
+    for (int pos = 0; pos < user_settings.led_count; pos++)
+    {
+        leds[pos] = CHSV(-mm / 50, 255, 255);
     }
 }
