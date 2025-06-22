@@ -72,6 +72,7 @@ int attack_width = DEFAULT_ATTACK_WIDTH;
 #define ATTACK_DURATION 500 // Duration of a wobble attack (ms)
 long attackMillis = 0;      // Time the attack started
 bool attacking = 0;         // Is the attack in progress?
+int attackStart = 0, attackEnd = 0; // leds affected by attack
 #define BOSS_WIDTH 40
 
 // TODO all animation durations should be defined rather than literals
@@ -345,6 +346,12 @@ void loop()
             {
                 attackMillis = mm;
                 attacking = 1;
+            }
+
+            if (attacking)
+            {
+                attackStart = getLED(playerPosition - (attack_width / 2));
+                attackEnd = getLED(playerPosition + (attack_width / 2));
             }
 
             // If still not attacking, move!
@@ -859,6 +866,10 @@ void tickStartup(long mm)
 
 void tickEnemies()
 {
+    int attStart = map(attackStart, 0, user_settings.led_count - 1, 0, VIRTUAL_LED_COUNT);
+    // making sure to cover the full range of the LED in virtual game space
+    int attEnd = map(attackEnd + 1, 0, user_settings.led_count - 1, 0, VIRTUAL_LED_COUNT) - 1;
+
     for (int i = 0; i < ENEMY_COUNT; i++)
     {
         if (enemyPool[i].Alive())
@@ -867,7 +878,7 @@ void tickEnemies()
             // Hit attack?
             if (attacking)
             {
-                if (enemyPool[i]._pos > playerPosition - (attack_width / 2) && enemyPool[i]._pos < playerPosition + (attack_width / 2))
+                if (enemyPool[i]._pos >= attStart && enemyPool[i]._pos <= attEnd)
                 {
                     enemyPool[i].Kill();
                     SFXkill();
@@ -915,9 +926,9 @@ void tickBoss()
         // CHECK FOR ATTACK
         if (attacking)
         {
-            if (
-                (getLED(playerPosition + (attack_width / 2)) >= getLED(boss._pos - BOSS_WIDTH / 2) && getLED(playerPosition + (attack_width / 2)) <= getLED(boss._pos + BOSS_WIDTH / 2)) ||
-                (getLED(playerPosition - (attack_width / 2)) <= getLED(boss._pos + BOSS_WIDTH / 2) && getLED(playerPosition - (attack_width / 2)) >= getLED(boss._pos - BOSS_WIDTH / 2)))
+            bool attackStartInsideBoss = attackStart <= getLED(boss._pos + BOSS_WIDTH / 2) && attackStart >= getLED(boss._pos - BOSS_WIDTH / 2);
+            bool attackEndInsideBoss   = attackEnd   <= getLED(boss._pos + BOSS_WIDTH / 2) && attackEnd   >= getLED(boss._pos - BOSS_WIDTH / 2);
+            if (attackStartInsideBoss || attackEndInsideBoss)
             {
                 boss.Hit();
                 if (boss.Alive())
@@ -1286,7 +1297,7 @@ void drawAttack()
     if (!attacking)
         return;
     int n = map(millis() - attackMillis, 0, ATTACK_DURATION, 100, 5);
-    for (int i = getLED(playerPosition - (attack_width / 2)) + 1; i <= getLED(playerPosition + (attack_width / 2)) - 1; i++)
+    for (int i = attackStart + 1; i <= attackEnd - 1; i++)
     {
         leds[i] = CRGB(0, 0, n);
     }
@@ -1300,8 +1311,8 @@ void drawAttack()
         n = 0;
         leds[getLED(playerPosition)] = CRGB(0, 255, 0);
     }
-    leds[getLED(playerPosition - (attack_width / 2))] = CRGB(n, n, 255);
-    leds[getLED(playerPosition + (attack_width / 2))] = CRGB(n, n, 255);
+    leds[attackStart] = CRGB(n, n, 255);
+    leds[attackEnd] = CRGB(n, n, 255);
 }
 
 int getLED(int pos)
