@@ -1,11 +1,13 @@
 #include "Arduino.h"
-#define FRICTION 1
+
+#define USE_GRAVITY 0  // 0/1 use gravity (LED strip going up wall)
+#define BEND_POINT 550 // 0/1000 point at which the LED strip goes up the wall
 
 class Particle
 {
 public:
     void Spawn(int pos);
-    void Tick(int USE_GRAVITY);
+    void Tick();
     void Kill();
     bool Alive();
     int _pos;
@@ -26,7 +28,7 @@ void Particle::Spawn(int pos)
     _life = 220 - abs(_sp);
 }
 
-void Particle::Tick(int USE_GRAVITY)
+void Particle::Tick()
 {
     if (_alive)
     {
@@ -39,7 +41,7 @@ void Particle::Tick(int USE_GRAVITY)
         {
             _sp += _life / 10;
         }
-        if (USE_GRAVITY && _pos > 500)
+        if (USE_GRAVITY && _pos > BEND_POINT)
             _sp -= 10;
         _power = 100 - _life;
         if (_power <= 0)

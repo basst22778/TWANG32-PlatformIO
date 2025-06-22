@@ -1026,7 +1026,7 @@ bool tickParticles()
     {
         if (particlePool[p].Alive())
         {
-            particlePool[p].Tick(USE_GRAVITY);
+            particlePool[p].Tick();
 
             if (particlePool[p]._power < 5)
             {
