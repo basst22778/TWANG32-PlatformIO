@@ -649,11 +649,11 @@ void moveBoss()
 {
     int spawnSpeed = 1800;
     if (boss._lives == 2)
-        spawnSpeed = 1600;
+        spawnSpeed = 1500;
     if (boss._lives == 1)
         spawnSpeed = 1000;
     spawnPool[0].Spawn(boss._pos, spawnSpeed, 3, 0, 0);
-    spawnSpawner(boss._pos, spawnSpeed, 3, 1, 0);
+    spawnPool[1].Spawn(boss._pos, spawnSpeed, 3, 1, 0);
 }
 
 /* ======================== spawn Functions =====================================
