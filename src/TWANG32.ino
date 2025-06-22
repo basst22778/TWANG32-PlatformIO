@@ -443,6 +443,7 @@ void loadLevel(int num)
     cleanupLevel();
     playerAlive = 1;
     lastLevel = false; // this gets changed on the boss level
+    FastLED.setBrightness(user_settings.led_brightness);
 
     /// Defaults...OK to change the following items in the levels below
     attack_width = DEFAULT_ATTACK_WIDTH;
@@ -495,18 +496,18 @@ void loadLevel(int num)
         CONVEYOR_INTRO,
         CONVEYOR_ENEMIES,
         LAVA_SPREAD_FALL,
+        LAVA_RUN,
+        CONVEYOR_HALT_TEST,
         SPAWNER_TRAIN,
         SPAWNER_TRAIN_SKINNY,
         SPAWNER_SPLIT,
         SPAWNER_SPLIT_LAVA,
-        LAVA_RUN,
         CONVEYOR_LAVA,
         CONVEYOR_ENEMY_SIN,
-        CONVEYOR_ENEMY_FAST,
         BOSS, // This should always be the last valid level!
     };
 
-    if (num < 0 || num >= BOSS)
+    if (num < 0 || num > BOSS)
     {
         Serial.printf("ERROR: Unknown level %d. Defaulting to starting level...\r\n", num);
         num = 0;
@@ -516,13 +517,12 @@ void loadLevel(int num)
     {
     case INTRO: 
         playerPosition = 200;
-        spawnEnemy(1, 0, 0, 0);
         break;
     case ENEMY_INTRO:
         spawnEnemy(900, 0, 1, 0);
         break;
     case SPAWNER_INTRO:
-        spawnSpawner(950, 4000, 2, 0, -3000);
+        spawnSpawner(950, 4000, 2, 0, -3500);
         break;
     case LAVA_INTRO:
         spawnLava(400, 490, 2000, 2000, 0, Lava::OFF, 0, 0);
@@ -536,8 +536,8 @@ void loadLevel(int num)
         spawnSpawner(950, 4500, 3, 0, -2000);
         break;
     case LAVA_SPREADING:
-        spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.25, 0);
-        spawnLava(800, 850, 2000, 2000, 0, Lava::OFF, 0.25, 0);
+        spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.2, 0);
+        spawnLava(800, 850, 2000, 2000, 0, Lava::OFF, 0.2, 0);
         spawnEnemy(450, 0, 1, 0);
         spawnEnemy(900, 0, 2, 0);
         break;
@@ -546,8 +546,8 @@ void loadLevel(int num)
         spawnEnemy(500, 1, 5, 250);
         break;
     case ENEMY_SIN_SWARM:
-        spawnEnemy(700, 1, 7, 275); // 425..975
-        spawnEnemy(600, 1, 5, 300); // 300..900
+        spawnEnemy(700, 1, 4, 275); // 425..975
+        spawnEnemy(600, 1, 6, 300); // 300..900
 
         spawnEnemy(800, 1, 6, 200); // 600..1000
         spawnEnemy(450, 1, 5, 300); // 150..750
@@ -559,12 +559,13 @@ void loadLevel(int num)
         playerPosition = 200;
         spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
         spawnEnemy(500, 0, 1, 0);
-        spawnSpawner(950, 3000, 3, 0, -1000);
+        spawnSpawner(950, 2500, 3, 0, -1000);
         break;
     case CONVEYOR_INTRO:
-        spawnConveyor(100, 600, -6);
-        spawnEnemy(650, 0, 0, 0);
-        spawnEnemy(800, 1, 1, 0);
+        spawnConveyor(100, 450, -3);
+        spawnConveyor(550, 900, -6);
+        spawnEnemy(950, 0, 1, 0);
+        spawnEnemy(500, 0, 1, 0);
         break;
     case CONVEYOR_ENEMIES:
         spawnConveyor(50, 1000, 6);
@@ -577,31 +578,40 @@ void loadLevel(int num)
         spawnEnemy(900, 0, 0, 0);
         break;
     case LAVA_SPREAD_FALL:
-        spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.2, -0.5);
+        spawnLava(400, 450, 2000, 2000, 0, Lava::OFF, 0.25, -0.5);
+        spawnLava(850, 900, 2000, 2000, 0, Lava::OFF, 0.25, -0.5);
         spawnEnemy(350, 0, 1, 0);
-        spawnSpawner(950, 5500, 3, 0, 0);
-        break;
-    case SPAWNER_TRAIN:
-        spawnSpawner(900, 1300, 2, 0, 0);
-        break;
-    case SPAWNER_TRAIN_SKINNY:
-        attack_width = 32;
-        spawnSpawner(900, 1800, 2, 0, 0);
-        break;
-    case SPAWNER_SPLIT:
-        spawnSpawner(550, 1500, 2, 0, 0);
-        spawnSpawner(550, 1500, 2, 1, 0);
-        break;
-    case SPAWNER_SPLIT_LAVA:
-        spawnSpawner(500, 1200, 2, 0, 0);
-        spawnSpawner(500, 1200, 2, 1, 0);
-        spawnLava(900, 950, 2200, 800, 2000, Lava::OFF, 0, 0);
+        spawnSpawner(950, 4500, 3, 0, 0);
         break;
     case LAVA_RUN:
         spawnLava(200, 300, 2000, 2000, 0, Lava::OFF, 0, 0);
-        spawnLava(400, 500, 2000, 2000, 0, Lava::OFF, 0, 0);
-        spawnLava(600, 700, 1000, 1000, 0, Lava::OFF, 0, 0);
-        spawnSpawner(950, 3800, 4, 0, 0);
+        spawnLava(400, 600, 2000, 2000, 0, Lava::ON, 0, 0);
+        spawnLava(700, 800, 1250, 750, 0, Lava::OFF, 0, 0);
+        spawnSpawner(950, 4000, 4, 0, -2500);
+        break;
+    case CONVEYOR_HALT_TEST:
+        spawnConveyor(100, 400, -4);
+        spawnEnemy(450, 0, 0, 0);
+        spawnConveyor(500, 800, -6);
+        spawnEnemy(850, 0, 0, 0);
+        break;
+    case SPAWNER_TRAIN:
+        spawnEnemy(500, 0, 2, 0);
+        spawnSpawner(900, 1300, 2, 0, -1300);
+        break;
+    case SPAWNER_TRAIN_SKINNY:
+        attack_width = 32;
+        spawnEnemy(500, 0, 2, 0);
+        spawnSpawner(900, 1800, 2, 0, -1800);
+        break;
+    case SPAWNER_SPLIT:
+        spawnSpawner(550, 1500, 2, 0, -1500);
+        spawnSpawner(550, 1500, 2, 1, -1500);
+        break;
+    case SPAWNER_SPLIT_LAVA:
+        spawnSpawner(500, 1200, 2, 0, -1200);
+        spawnSpawner(500, 1200, 2, 1, -1200);
+        spawnLava(900, 950, 2200, 800, 2000, Lava::OFF, 0, 0);
         break;
     case CONVEYOR_LAVA:
         spawnConveyor(100, 300, -4);
@@ -612,19 +622,12 @@ void loadLevel(int num)
         spawnLava(900, 990, 3000, 1000, 0, Lava::OFF, 0, 0);
         break;
     case CONVEYOR_ENEMY_SIN:
+        spawnEnemy(800, 1, 7, 275);
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
         spawnSpawner(950, 5500, 4, 0, 3000);
         spawnSpawner(0, 5500, 5, 1, 10000);
         spawnConveyor(100, 900, -4);
-        break;
-    case CONVEYOR_ENEMY_FAST:
-        spawnEnemy(800, 1, 7, 275);
-        spawnEnemy(700, 1, 7, 275);
-        spawnEnemy(500, 1, 5, 250);
-        spawnSpawner(950, 3000, 4, 0, 3000);
-        spawnSpawner(0, 5500, 5, 1, 10000);
-        spawnConveyor(100, 900, -6);
         break;
     case BOSS:
         // Boss this should always be the last level
