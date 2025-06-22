@@ -1047,7 +1047,17 @@ void tickConveyors()
     long m = 10000 + millis();
     playerPositionModifier = 0;
 
-    int levels = 5; // brightness levels in conveyor
+    static const int levels = 5; // brightness levels in conveyor
+    // For WS2812 LEDs this looks good with user_settings.led_brightness > 50
+    // for lower led_brightness values you might want to increase 
+    // MIN_BRIGHTNESS and CONVEYOR_BRIGHTNESS
+    static const int brightnessMap[levels] = {
+        MIN_BRIGHTNESS, 
+        MIN_BRIGHTNESS + (CONVEYOR_BRIGHTNESS - MIN_BRIGHTNESS) / 12,
+        MIN_BRIGHTNESS + (CONVEYOR_BRIGHTNESS - MIN_BRIGHTNESS) / 6,
+        MIN_BRIGHTNESS + (CONVEYOR_BRIGHTNESS - MIN_BRIGHTNESS) / 3,
+        CONVEYOR_BRIGHTNESS,
+    };
 
     for (int i = 0; i < CONVEYOR_COUNT; i++)
     {
@@ -1058,11 +1068,18 @@ void tickConveyors()
         int lastLed = getLED(conveyorPool[i]._endPoint);
         for (int led = firstLed; led <= lastLed; led++)
         {
-            int n = (-led + (m / 500 / conveyorPool[i]._speed)) % levels;
+            // this results in -4..0 for conveyors moving towards start
+            // and 0..4 for conveyors moving towards goal with each led
+            // being +-1 off the last one
+            // conveyors with speed +-5 will "move" at 100ms per LED
+            int n = (-led + (m * conveyorPool[i]._speed / 500)) % levels;
+            // make all values positive for value mapping
+            n = abs(n);
 
-            int b = map(n, 5, 0, 0, CONVEYOR_BRIGHTNESS);
-            if (b > 0)
-                leds[led] = CRGB(0, 0, b);
+            assert(n >= 0 && n < levels);
+
+            int b = brightnessMap[n];
+            leds[led] = CRGB(b, b, b);
         }
 
         if (playerPosition >= conveyorPool[i]._startPoint && playerPosition <= conveyorPool[i]._endPoint)

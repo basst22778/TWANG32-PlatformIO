@@ -15,8 +15,10 @@
 #define NUM_LEDS 30
 #define MIN_LEDS 30
 
-#define DEFAULT_BRIGHTNESS 150
-#define MIN_BRIGHTNESS 10
+// for WS2812 sensible values are >50 and <200 (above brightness will only
+// minimally increase, but current drawn increases a lot)
+#define DEFAULT_BRIGHTNESS 100
+#define MIN_BRIGHTNESS 5
 #define MAX_BRIGHTNESS 255
 
 // PLAYER

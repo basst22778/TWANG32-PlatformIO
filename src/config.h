@@ -47,6 +47,9 @@
 #error "Both USE_APA102 and USE_NEOPIXEL are defined in config.h. Only one can be used"
 #endif
 
+// NOTE: All brightness values are 0.255 and will be scaled by the brightness set
+// in FastLED as well (user_settings.led_brightness value)
+
 #ifdef USE_APA102
 #define LED_TYPE APA102
 #define LED_COLOR_ORDER BGR // typically this will be the order, but switch it if not
@@ -58,7 +61,7 @@
 
 #ifdef USE_NEOPIXEL
 #define LED_TYPE NEOPIXEL
-#define CONVEYOR_BRIGHTNESS 60			  // low neopixel values are nearly off, Neopixels need a higher value
+#define CONVEYOR_BRIGHTNESS 40			  // low neopixel values are nearly off, Neopixels need a higher value
 #define LAVA_OFF_BRIGHTNESS 15			  // low neopixel values are nearly off, Neopixels need a higher value
 #define MAX_LEDS 300					  // Neopixels cannot handle the framerate
 #define MIN_REDRAW_INTERVAL 1000.0 / 60.0 // divide by frames per second..if you tweak adjust player speed
