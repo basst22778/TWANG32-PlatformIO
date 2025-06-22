@@ -87,10 +87,20 @@ bool attacking = 0;         // Is the attack in progress?
 #define WIN_CLEAR_DURATION 1000
 #define WIN_OFF_DURATION 1200
 
+// Main gyro in spring, tracks its connected state and this code will try to
+// reconnect it every 2s, if connection drops
 Twang_MPU accelgyro = Twang_MPU(Twang_MPU::MPU_ADDR_DEFAULT);
-CRGB leds[VIRTUAL_LED_COUNT];
+// A "rference" gyro mounted in the base of the case, will be used for delta
+// calculation for a better handheld experience (so the case does not need to be
+// flat on the ground). Will only be connected once at startup and then ignored
+// if later disconnected.
+Twang_MPU accelgyro_ref = Twang_MPU(Twang_MPU::MPU_ADDR_ALTERNATIVE);
+unsigned long gyroLastCheckMs = 0;
+const unsigned long GYRO_CHECK_INTERVAL_MS = 2000;
 Samples MPUAngleSamples = {0};
 Samples MPUWobbleSamples = {0};
+
+CRGB leds[VIRTUAL_LED_COUNT];
 iSin isin = iSin();
 
 // #define JOYSTICK_DEBUG  // comment out to stop serial debugging
@@ -136,10 +146,6 @@ bool playerAlive;
 long killTime;
 int lives = LIVES_PER_LEVEL;
 bool lastLevel = false;
-
-bool gyroConnected = false;
-unsigned long gyroLastCheckMs = 0;
-const unsigned long GYRO_CHECK_INTERVAL_MS = 2000;
 
 int score = 0;
 
@@ -200,9 +206,12 @@ void setup()
 
     Wire.begin();
     accelgyro.initialize();
-    gyroConnected = accelgyro.verify();
+    accelgyro.testConnection();
+    accelgyro_ref.initialize();
+    accelgyro_ref.testConnection();
     gyroLastCheckMs = millis();
-    Serial.printf("Gyro is %sconncted!\r\n", gyroConnected ? "" : "NOT ");
+    Serial.printf("Main gyro is %sconncted!\r\n", accelgyro.connected ? "" : "NOT ");
+    Serial.printf("Reference gyro is %sconncted!\r\n", accelgyro_ref.connected ? "" : "NOT ");
 
 #ifdef USE_NEOPIXEL
     Serial.print("\r\nCompiled for WS2812B (Neopixel) LEDs");
@@ -267,18 +276,18 @@ void loop()
 
     if (mm - previousMillis >= MIN_REDRAW_INTERVAL)
     {
-        if (gyroConnected)
+        if (accelgyro.connected)
         {
-            gyroConnected = getInput();
-            if (!gyroConnected)
+            getInput();
+            if (!accelgyro.connected)
                 Serial.println("Gyro disconnected!");
         }
         else if (millis() - gyroLastCheckMs > GYRO_CHECK_INTERVAL_MS)
         {
             accelgyro.initialize();
-            gyroConnected = accelgyro.verify();
+            accelgyro.testConnection();
             gyroLastCheckMs = millis();
-            if (gyroConnected)
+            if (accelgyro.connected)
                 Serial.println("Gyro connected!");
         }
 
@@ -1354,25 +1363,33 @@ void screenSaverTick()
 // ---------------------------------
 // ----------- JOYSTICK ------------
 // ---------------------------------
+// returns success (if at least the main gyro could be read)
 bool getInput()
 {
     // This is responsible for the player movement speed and attacking.
-    // You can replace it with anything you want that passes a -90>+90 value to joystickTilt
-    // and any value to joystickWobble that is greater than ATTACK_THRESHOLD (defined at start)
+    // You can replace it with anything you want that passes a -90..90 value to joystickTilt
+    // and any value to joystickWobble that is >= than ATTACK_THRESHOLD (defined at start)
     // For example you could use 3 momentary buttons:
     // if(digitalRead(leftButtonPinNumber) == HIGH) joystickTilt = -90;
     // if(digitalRead(rightButtonPinNumber) == HIGH) joystickTilt = 90;
     // if(digitalRead(attackButtonPinNumber) == HIGH) joystickWobble = ATTACK_THRESHOLD;
-    int16_t ax, ay, az;
-    int16_t gx, gy, gz;
-    ax = ay = az = gx = gy = gz = 0;
 
-    bool connected = accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    bool connected = accelgyro.getMotion6();
     if (!connected)
         return false;
 
-    int a = (JOYSTICK_ORIENTATION == 0 ? ax : (JOYSTICK_ORIENTATION == 1 ? ay : az)) / 166;
-    int g = (JOYSTICK_ORIENTATION == 0 ? gx : (JOYSTICK_ORIENTATION == 1 ? gy : gz));
+    int a = (JOYSTICK_ORIENTATION == 0 ? accelgyro.ax : (JOYSTICK_ORIENTATION == 1 ? accelgyro.ay : accelgyro.az)) / 166;
+    int g = (JOYSTICK_ORIENTATION == 0 ? accelgyro.gx : (JOYSTICK_ORIENTATION == 1 ? accelgyro.gy : accelgyro.gz));
+    
+    if (accelgyro_ref.connected)
+    {
+        connected = accelgyro_ref.getMotion6();
+        if (connected)
+        {
+            a -= (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.ax : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.ay : accelgyro_ref.az)) / 166;
+            g -= (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.gx : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.gy : accelgyro_ref.gz));
+        }
+    }
 
 #ifdef JOYSTICK_DEBUG
     Serial.print("a:");

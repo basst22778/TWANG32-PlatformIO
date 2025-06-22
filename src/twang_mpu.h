@@ -2,16 +2,22 @@
 // TWANG requirements
 // I reused the function names to make it compatible
 // B. Dring 2/2018
+// Updated to store connected state and other data in class object
+// JS 06/2025
 
 class Twang_MPU
 {
 public:
 	Twang_MPU(uint16_t address);
 	void initialize();
+	bool getMotion6();
 	bool getMotion6(int16_t *xAccel, int16_t *yAccel, int16_t *zAccel, int16_t *xGyro, int16_t *yGyro, int16_t *zGyro);
-	bool verify();
+	bool testConnection();
 
-	uint16_t address;
+	uint16_t devAddr;
+	bool connected; // cached connected value, updated by testConnection and on error
+	int16_t ax, ay, az;
+	int16_t gx, gy, gz;
 
 	static const uint16_t MPU_ADDR_DEFAULT = 0x68;
 	static const uint16_t MPU_ADDR_ALTERNATIVE = 0x69;
@@ -25,38 +31,51 @@ private:
 
 Twang_MPU::Twang_MPU(uint16_t address)
 {
-	this->address = address;
+	this->devAddr = address;
+	this->connected = false;
 }
 
 void Twang_MPU::initialize()
 {
-	Wire.beginTransmission(address);
+	Wire.beginTransmission(devAddr);
 	Wire.write(PWR_MGMT_1); // PWR_MGMT_1 register
 	Wire.write(0);			// set to zero (wakes up the MPU-6050)
 	Wire.endTransmission(true);
 }
 
-bool Twang_MPU::verify()
+// returns connected state
+bool Twang_MPU::testConnection()
 {
-	Wire.beginTransmission(this->address);
+	Wire.beginTransmission(devAddr);
 	Wire.write(MPU_DATA_WHO_AM_I);
 	Wire.endTransmission(false);
-	Wire.requestFrom(this->address, (uint8_t)1, true); // read the whole MPU data section
-	return (Wire.read() == this->address);
+	Wire.requestFrom(devAddr, (uint8_t)1, true); // read the whole MPU data section
+	this->connected = (Wire.read() == devAddr);
+	return this->connected;
 }
 
+// returns connected state, stores motion values internally
+bool Twang_MPU::getMotion6()
+{
+	return getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+}
+
+// returns connected state, stores motion values in passed variables
 bool Twang_MPU::getMotion6(int16_t *xAccel, int16_t *yAccel, int16_t *zAccel, int16_t *xGyro, int16_t *yGyro, int16_t *zGyro)
 {
-	Wire.beginTransmission(this->address);
+	Wire.beginTransmission(devAddr);
 	Wire.write(MPU_DATA_REG_START); // starting with register 0x3B (ACCEL_XOUT_H)
 	Wire.endTransmission(false);
-	Wire.requestFrom(this->address, MPU_DATA_LEN, true); // read the whole MPU data section
+	Wire.requestFrom(devAddr, MPU_DATA_LEN, true); // read the whole MPU data section
 	unsigned long timeout = millis();
 	const unsigned long TIMEOUT_MS = 5;
 	while (Wire.available() < MPU_DATA_LEN)
 	{
 		if (millis() - timeout > TIMEOUT_MS)
+		{
+			this->connected = false;
 			return false;
+		}
 		delayMicroseconds(100);
 	}
 	*xAccel = Wire.read() << 8 | Wire.read(); // x Accel
