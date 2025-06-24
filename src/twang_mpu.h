@@ -20,7 +20,7 @@ public:
 	int16_t gx, gy, gz;
 
 	static const uint16_t MPU_ADDR_DEFAULT = 0x68;
-	static const uint16_t MPU_ADDR_ALTERNATIVE = 0x69;
+	static const uint16_t MPU_ADDR_ALTERNATIVE = 0x69; // if AD0 pin is HIGH
 
 private:
 	static const uint8_t PWR_MGMT_1 = 0x6B;
@@ -50,7 +50,13 @@ bool Twang_MPU::testConnection()
 	Wire.write(MPU_DATA_WHO_AM_I);
 	Wire.endTransmission(false);
 	Wire.requestFrom(devAddr, (uint8_t)1, true); // read the whole MPU data section
-	this->connected = (Wire.read() == devAddr);
+	int addr = Wire.read();
+	// NOTE: The WHO_AM_I register only returns the upper 6 bits of the address
+	// therefore it will not correctly return the address if AD0 is HIGH, but
+	// always the default value 0x68
+	// see documentation section 4.32, "Register 117 – Who Am I" (p.45): 
+	// https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
+	this->connected = (addr == MPU_ADDR_DEFAULT);
 	return this->connected;
 }
 
