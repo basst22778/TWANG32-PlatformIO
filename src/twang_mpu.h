@@ -50,12 +50,12 @@ bool Twang_MPU::testConnection()
 	Wire.write(MPU_DATA_WHO_AM_I);
 	Wire.endTransmission(false);
 	Wire.requestFrom(devAddr, (uint8_t)1, true); // read the whole MPU data section
-	int addr = Wire.read();
 	// NOTE: The WHO_AM_I register only returns the upper 6 bits of the address
 	// therefore it will not correctly return the address if AD0 is HIGH, but
 	// always the default value 0x68
 	// see documentation section 4.32, "Register 117 – Who Am I" (p.45): 
 	// https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
+	int addr = Wire.read();
 	this->connected = (addr == MPU_ADDR_DEFAULT);
 	return this->connected;
 }

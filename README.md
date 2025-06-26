@@ -1,7 +1,8 @@
 # TWANG32
 An ESP32 based, 1D, LED strip, dungeon crawler. inspired by Line Wobbler by Robin B
 
-This was ported from the [TWANG fork](https://github.com/bdring/TWANG) by bdring of [Buildlog.net Blog](http://www.buildlog.net/blog?s=twang)
+This was ported from the [TWANG fork](https://github.com/bdring/TWANG) by bdring of [Buildlog.net Blog](http://www.buildlog.net/blog?s=twang).  
+Modifications and bug fixes by [Janek](https://janek.ing).
 
 [![Youtube Video](http://www.buildlog.net/blog/wp-content/uploads/2018/05/vid_thumb.png)](https://www.youtube.com/watch?v=RXpfa-ZvUMA)
 
@@ -19,58 +20,74 @@ This was ported from the [TWANG fork](https://github.com/bdring/TWANG) by bdring
 
 - All of the Arduino version game features are functional.
 - The game now has a WiFi access port to get game stats. Connect a smartphone or computer to see them.
-  - **SSID:** TWANG_AP
-  - **Password:** 12345666
-  - **URL:** 192.168.4.1
+    - **SSID:** TWANG_AP
+    - **Password:** 12345666
+    - **URL:** 192.168.4.1
 - You can update these settings over WiFi
-  - LED Count
-  - LED Brightness
-  - Audio Volume
-  - Joystick Deadzone (removes drift)
-  - Attack Threshold (twang sensitivity)
-  - Lives Per Level
+    - LED Count
+    - LED Brightness
+    - Audio Volume
+    - Joystick Deadzone (removes drift)
+    - Attack Threshold (twang sensitivity)
+    - Lives Per Level
 
 ![](http://www.buildlog.net/blog/wp-content/uploads/2018/03/20180328_122254.jpg)
 
+## Changes by Janek
+- PlatformIO project setup (though it probably still compiles in Arduino IDE as well)
+- optional two MPU6050 setup, for a better handheld experience (the enclose does not need to rest on a table anymore!)
+- made attack more consistant (by always attacking all lit up spaces fully)
+- new levels
+- a lot of level tweaks to make them fairer and more interesting
+- better conveyor rendering
+- rendering of spawners
+- fix life display
+- fix configuration over serial
+- more screensavers
+- remove running median dependency
+- many small code quality improvements
+
 ## TO DO List:
 
-- Wireless features~~
-  - 2 Player features by linking controllers. TBD
-=======
+- Wireless features
+    - 2 Player features by linking controllers. TBD
 -  Settings:
-  - Change strip type.
+    - Change strip type.
 -  Digitized Audio
-  - Currently the port uses the same square wave tones of the the Arduino version.
-  - I want to convert to digitized high quality sound effects.
-  - Possibly mix multiple sounds so things like lava and movement sound good at the same time.
+    - Currently the port uses the same square wave tones of the the Arduino version.
+    - I want to convert to digitized high quality sound effects.
+    - Possibly mix multiple sounds so things like lava and movement sound good at the same time.
 - Better looking mobile web interface (looks more like a web app)
-
-**BTW:** Since you have red this far... If you want to contribute, contact me and I might be able to get you some free or discounted hardware.
 
 ## Required libraries:
 * [FastLED](http://fastled.io/)
-* [RunningMedian](http://playground.arduino.cc/Main/RunningMedian)
 
 ## Hardware used:
 * ESP32, I typically use the NodeMCU-32S module
-* LED light strip. The more the better, maximum of 1000. Tested with 1x & 2x 144/meter, 12x 60/meter and 5m x 114/meter strips. This has been tested with APA102C and NeoPixel type strips. Anything compatible with the FastLED library should work.
-* MPU6050 accelerometer
-* Spring doorstop, I used [these](http://smile.amazon.com/gp/product/B00J4Y5BU2)
-* Speaker and amplifier. I use a PAM8403 module. (ESP32 cannot drive a speaker as loudly as an Arduino)
+* LED light strip. The more the better, maximum of 1000. Tested with 1x & 2x 144/meter, 12x 60/meter and 5m x 114/meter strips. This has been tested with APA102C and NeoPixel (WS2812) type strips. Anything compatible with the FastLED library should work.
+    * For WS2812 strips, I usually recommend the ones by BTF lighting, e.g. [these](https://www.amazon.de/dp/B088FK8NG6)
+* [MPU6050 accelerometer](https://www.amazon.de/dp/B07N2ZL34Z)
+* Spring doorstop, bdring used [these](http://smile.amazon.com/gp/product/B00J4Y5BU2), in Germany you can get [these](https://www.amazon.de/dp/B07PFFFFMT)
+* Speaker and amplifier. I use a [PAM8403 module](https://www.amazon.de/dp/B07KQCKWF8). (ESP32 cannot drive a speaker as loudly as an Arduino)
+* The cheapest place to get the electronic components probably is AliExpress
 
 See [Buildlog.net Blog](http://www.buildlog.net/blog?s=twang) for more details.
 
-Super easy to use kits and ready to play units [are available on Tindie](https://www.tindie.com/products/33366583/twang32-led-strip-game/).
-
-![TWANG 32 Controller](http://www.buildlog.net/blog/wp-content/uploads/2018/03/20180319_080636.jpg)
-
 ## Enclosure
-[The STL files are here](http://www.buildlog.net/blog/wp-content/uploads/2018/04/twang32_stl.zip).
+You have two options:
+1. The original one by bdring, which you can find as an [STL here](http://www.buildlog.net/blog/wp-content/uploads/2018/04/twang32_stl.zip) or as [STEP in this repo](/parts/step/original/)
+1. The one by Janek, which has several modifications:
+    1. No speaker and therefore slightly smaller (and slightly more water resistant)
+    1. Made to connect using [these USB-C sockets](https://www.amazon.de/dp/B0CPLRH4W6)
+    1. Inside mounting holes perfect for a 20x20 2,54mm stripboard
+    1. Screw mounted MPU 6050 (instead of using a foam block to hold it down)
+    1. Screw holes for fixing the knob and spring (since they like to twist when playing, which can skew the gyro readings)
+    1. All holes ready for [M3 self-tapering screws](https://www.amazon.de/dp/B0DGGC9ZYC) (though regular M3 screws will work as well)
+    1. A small external splitter/junction box, so you can add the power supply separately and closer to the LED strip
 
 ![TWANG32](http://www.buildlog.net/blog/wp-content/uploads/2018/03/twang32_enclosure.jpg)
 
 ## PINs
-
 - 16 - LED Data
 - 17 - LED Clock (optional, for the strips that need it)
 - 21 - Accelerometer SDA (or the equivalent I²C pin on your board)
