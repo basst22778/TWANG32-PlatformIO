@@ -1276,19 +1276,22 @@ void drawLives()
     SFXcomplete(); // stop any sounds
     FastLED.clear();
 
+    static const int ledsPerLife = 4;
+
     int pos = 0;
     for (int i = 0; i < lives; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < ledsPerLife; j++)
         {
             leds[pos++] = CRGB(0, 255, 0);
             FastLEDshowESP32();
         }
         leds[pos++] = CRGB(0, 0, 0);
-        delay(20);
+        leds[pos++] = CRGB(0, 0, 0);
+        delay(30);
     }
     FastLEDshowESP32();
-    delay(400);
+    delay(500);
     FastLED.clear();
 }
 
