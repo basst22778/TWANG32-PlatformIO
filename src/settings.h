@@ -196,6 +196,8 @@ void settings_set(settings_param_t param)
 		{
 			case 'E': // LED count
 				user_settings.led_end = constrain(param.newValue, MIN_LEDS, MAX_LEDS);
+				if (user_settings.led_offset > user_settings.led_end-MIN_LEDS)
+					user_settings.led_offset = user_settings.led_end-MIN_LEDS;					
 				settings_eeprom_write();
 				Serial.printf("Set LED count to %d\r\n", user_settings.led_end);
 				break;
