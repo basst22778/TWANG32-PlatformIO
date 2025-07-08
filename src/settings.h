@@ -3,13 +3,14 @@
 
 #include <EEPROM.h>
 #include "sound.h"
+#include "config.h"
 
 // Version 2 adds the number of LEDs
 
 // change this whenever the saved settings are not compatible with a change
+// (i.e. when you add, remove or reorder members of the settings_t struct)
 // It forces a reset from defaults.
-#define SETTINGS_VERSION 2
-#define EEPROM_SIZE 256
+#define SETTINGS_VERSION 3
 
 // LEDS
 #define NUM_LEDS 30
@@ -18,6 +19,7 @@
 // for WS2812 sensible values are >50 and <200 (above brightness will only
 // minimally increase, but current drawn increases a lot)
 #define DEFAULT_BRIGHTNESS 100
+#define DEFAULT_BRIGHTNESS_SCREENSAVER 50
 #define MIN_BRIGHTNESS 5
 #define MAX_BRIGHTNESS 255
 
@@ -47,12 +49,17 @@ long lastInputTime = 0;
 
 // TODO ... move all the settings to this file.
 
+#define LED_LENGTH (user_settings.led_end - user_settings.led_offset)
+#define FOREACH_LED(iter) for (int iter = user_settings.led_offset; iter < user_settings.led_end; iter++)
+
 typedef struct
 {
 	uint8_t settings_version; // stores the settings format version
 
-	uint16_t led_count;
+	uint16_t led_offset;
+	uint16_t led_end;
 	uint8_t led_brightness;
+	uint8_t led_brightnessScreensaver;
 
 	uint8_t joystick_deadzone;
 	uint16_t attack_threshold;
@@ -187,16 +194,25 @@ void settings_set(settings_param_t param)
 	{
 		switch (param.code)
 		{
-			case 'C': // LED Count
-				user_settings.led_count = constrain(param.newValue, MIN_LEDS, MAX_LEDS);
+			case 'E': // LED count
+				user_settings.led_end = constrain(param.newValue, MIN_LEDS, MAX_LEDS);
 				settings_eeprom_write();
-				Serial.printf("Set LED count to %d\r\n", user_settings.led_count);
+				Serial.printf("Set LED count to %d\r\n", user_settings.led_end);
+				break;
+			case 'O': // LED offset
+				user_settings.led_offset = constrain(param.newValue, 0, user_settings.led_end-MIN_LEDS);
+				settings_eeprom_write();
+				Serial.printf("Set LED offset to %d\r\n", user_settings.led_offset);
 				break;
 			case 'B': // brightness
 				user_settings.led_brightness = constrain(param.newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-				FastLED.setBrightness(user_settings.led_brightness);
 				settings_eeprom_write();
 				Serial.printf("Set brightness to %d\r\n", user_settings.led_brightness);
+				break;
+			case 'C': // screensaver brightness
+				user_settings.led_brightnessScreensaver = constrain(param.newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+				settings_eeprom_write();
+				Serial.printf("Set brightness to %d\r\n", user_settings.led_brightnessScreensaver);
 				break;
 			case 'S': // sound
 				user_settings.audio_volume = constrain(param.newValue, MIN_VOLUME, MAX_VOLUME);
@@ -257,8 +273,10 @@ void reset_settings()
 {
 	user_settings.settings_version = SETTINGS_VERSION;
 
-	user_settings.led_count = NUM_LEDS;
+	user_settings.led_offset = 0;
+	user_settings.led_end = NUM_LEDS;
 	user_settings.led_brightness = DEFAULT_BRIGHTNESS;
+	user_settings.led_brightnessScreensaver = DEFAULT_BRIGHTNESS_SCREENSAVER;
 
 	user_settings.joystick_deadzone = DEFAULT_JOYSTICK_DEADZONE;
 	user_settings.attack_threshold = DEFAULT_ATTACK_THRESHOLD;
@@ -287,8 +305,10 @@ void show_settings_menu()
 	Serial.println("===================================");
 
 	Serial.println();
-	Serial.printf("C=%d (LED Count %d-%d)\r\n", user_settings.led_count, MIN_LEDS, MAX_LEDS);
+	Serial.printf("O=%d (LED Offset %d-%d)\r\n", user_settings.led_offset, 0, user_settings.led_end-MIN_LEDS);
+	Serial.printf("E=%d (LED End/Count %d-%d)\r\n", user_settings.led_end, MIN_LEDS, MAX_LEDS);
 	Serial.printf("B=%d (LED Brightness %d-%d)\r\n", user_settings.led_brightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+	Serial.printf("C=%d (Screensaver Brightness %d-%d)\r\n", user_settings.led_brightnessScreensaver, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 	Serial.printf("S=%d (Sound volume %d-%d)\r\n", user_settings.audio_volume, MIN_VOLUME, MAX_VOLUME);
 	Serial.printf("D=%d (Joystick deadzone %d-%d)\r\n", user_settings.joystick_deadzone, MIN_JOYSTICK_DEADZONE, MAX_JOYSTICK_DEADZONE);
 	Serial.printf("A=%d (Attack sensitivity %d-%d)\r\n", user_settings.attack_threshold, MIN_ATTACK_THRESHOLD, MAX_ATTACK_THRESHOLD);
@@ -319,10 +339,9 @@ void show_game_stats()
 
 void settings_eeprom_read()
 {
-	EEPROM.begin(EEPROM_SIZE);
+	EEPROM.begin(sizeof(user_settings));
 
 	uint8_t ver = EEPROM.read(0);
-	uint8_t temp[sizeof(user_settings)];
 
 	if (ver != SETTINGS_VERSION)
 	{
@@ -339,30 +358,17 @@ void settings_eeprom_read()
 		Serial.println(ver);
 	}
 
-	for (int i = 0; i < sizeof(user_settings); i++)
-	{
-		temp[i] = EEPROM.read(i);
-	}
+	EEPROM.readBytes(0, &user_settings, sizeof(user_settings));
 
 	EEPROM.end();
-
-	memcpy((char *)&user_settings, temp, sizeof(user_settings));
 }
 
 void settings_eeprom_write()
 {
 	sound_pause(); // prevent interrupt from causing crash
 
-	EEPROM.begin(EEPROM_SIZE);
-
-	uint8_t temp[sizeof(user_settings)];
-	memcpy(temp, (uint8_t *)&user_settings, sizeof(user_settings));
-
-	for (int i = 0; i < sizeof(user_settings); i++)
-	{
-		EEPROM.write(i, temp[i]);
-	}
-
+	EEPROM.begin(sizeof(user_settings));
+	EEPROM.writeBytes(0, &user_settings, sizeof(user_settings));
 	EEPROM.commit();
 	EEPROM.end();
 

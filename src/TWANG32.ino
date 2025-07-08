@@ -72,7 +72,7 @@ int attack_width = DEFAULT_ATTACK_WIDTH;
 #define ATTACK_DURATION 500 // Duration of a wobble attack (ms)
 long attackMillis = 0;      // Time the attack started
 bool attacking = 0;         // Is the attack in progress?
-int attackStart = 0, attackEnd = 0; // leds affected by attack
+int attackStartLED = 0, attackEndLED = 0; // leds affected by attack
 #define BOSS_WIDTH 40
 
 // TODO all animation durations should be defined rather than literals
@@ -155,6 +155,22 @@ int score = 0;
 // -- Task handles for use in the notifications
 static TaskHandle_t FastLEDshowTaskHandle = 0;
 static TaskHandle_t userTaskHandle = 0;
+
+long mapconstrain(long x, long in_min, long in_max, long out_min, long out_max) {
+    if (x <= in_min)
+        return out_min;
+    if (x >= in_max)
+        return out_max;
+
+    const long run = in_max - in_min;
+    if(run == 0){
+        log_e("map(): Invalid input range, min == max");
+        return -1; // AVR returns -1, SAM returns 0
+    }
+    const long rise = out_max - out_min;
+    const long delta = x - in_min;
+    return (delta * rise) / run + out_min;
+}
 
 /** show() for ESP32
  *  Call this function instead of FastLED.show(). It signals core 0 to issue a show,
@@ -350,8 +366,8 @@ void loop()
 
             if (attacking)
             {
-                attackStart = getLED(playerPosition - (attack_width / 2));
-                attackEnd = getLED(playerPosition + (attack_width / 2));
+                attackStartLED = getLED(playerPosition - (attack_width / 2));
+                attackEndLED = getLED(playerPosition + (attack_width / 2));
             }
 
             // If still not attacking, move!
@@ -828,15 +844,15 @@ void tickStartup(long mm)
     FastLED.clear();
     if (stageStartTime + STARTUP_WIPEUP_DUR > mm) // fill to the top with green
     {
-        int n = _min(map(((mm - stageStartTime)), 0, STARTUP_WIPEUP_DUR, 0, user_settings.led_count), user_settings.led_count); // fill from top to bottom
-        for (int i = 0; i <= n; i++)
+        int n = mapconstrain(((mm - stageStartTime)), 0, STARTUP_WIPEUP_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
+        for (int i = user_settings.led_offset; i < n; i++)
         {
             leds[i] = CRGB(0, 255, 0);
         }
     }
     else if (stageStartTime + STARTUP_SPARKLE_DUR > mm) // sparkle the full green bar
     {
-        for (int i = 0; i < user_settings.led_count; i++)
+        FOREACH_LED(i)
         {
             if (random8(30) < 28)
                 leds[i] = CRGB(0, 255, 0); // most are green
@@ -849,15 +865,11 @@ void tickStartup(long mm)
     }
     else if (stageStartTime + STARTUP_FADE_DUR > mm) // fade it out to bottom
     {
-        int n = _max(map(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, 0, user_settings.led_count), 0); // fill from top to bottom
-        int brightness = _max(map(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, 255, 0), 0);
-        // for(int i = 0; i<= n; i++){
+        int n = mapconstrain(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
+        int brightness = mapconstrain(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, 255, 0);
 
-        // leds[i] = CRGB(0, brightness, 0);
-        // }
-        for (int i = n; i < user_settings.led_count; i++)
+        for (int i = n; i < user_settings.led_end; i++)
         {
-
             leds[i] = CRGB(0, brightness, 0);
         }
     }
@@ -866,9 +878,9 @@ void tickStartup(long mm)
 
 void tickEnemies()
 {
-    int attStart = map(attackStart, 0, user_settings.led_count - 1, 0, VIRTUAL_LED_COUNT);
+    int attStart = map(attackStartLED, user_settings.led_offset, user_settings.led_end - 1, 0, VIRTUAL_LED_COUNT);
     // making sure to cover the full range of the LED in virtual game space
-    int attEnd = map(attackEnd + 1, 0, user_settings.led_count - 1, 0, VIRTUAL_LED_COUNT) - 1;
+    int attEnd = map(attackEndLED + 1, user_settings.led_offset, user_settings.led_end - 1, 0, VIRTUAL_LED_COUNT) - 1;
 
     for (int i = 0; i < ENEMY_COUNT; i++)
     {
@@ -926,8 +938,8 @@ void tickBoss()
         // CHECK FOR ATTACK
         if (attacking)
         {
-            bool attackStartInsideBoss = attackStart <= getLED(boss._pos + BOSS_WIDTH / 2) && attackStart >= getLED(boss._pos - BOSS_WIDTH / 2);
-            bool attackEndInsideBoss   = attackEnd   <= getLED(boss._pos + BOSS_WIDTH / 2) && attackEnd   >= getLED(boss._pos - BOSS_WIDTH / 2);
+            bool attackStartInsideBoss = attackStartLED <= getLED(boss._pos + BOSS_WIDTH / 2) && attackStartLED >= getLED(boss._pos - BOSS_WIDTH / 2);
+            bool attackEndInsideBoss   = attackEndLED   <= getLED(boss._pos + BOSS_WIDTH / 2) && attackEndLED   >= getLED(boss._pos - BOSS_WIDTH / 2);
             if (attackStartInsideBoss || attackEndInsideBoss)
             {
                 boss.Hit();
@@ -954,7 +966,7 @@ void drawExit()
 {
     if (!boss.Alive())
     {
-        leds[user_settings.led_count - 1] = CRGB(0, 0, 255);
+        leds[user_settings.led_end - 1] = CRGB(0, 0, 255);
     }
 }
 
@@ -1110,8 +1122,8 @@ void tickComplete(long mm) // the boss is dead
     SFXcomplete();
     if (stageStartTime + 500 > mm)
     {
-        int n = _max(map(((mm - stageStartTime)), 0, 500, user_settings.led_count, 0), 0);
-        for (int i = user_settings.led_count; i >= n; i--)
+        int n = mapconstrain(((mm - stageStartTime)), 0, 500, user_settings.led_end, user_settings.led_offset);
+        for (int i = user_settings.led_end-1; i >= n; i--)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
             leds[i].setHSV(brightness, 255, 50);
@@ -1119,7 +1131,7 @@ void tickComplete(long mm) // the boss is dead
     }
     else if (stageStartTime + 5000 > mm)
     {
-        for (int i = user_settings.led_count; i >= 0; i--)
+        for (int i = user_settings.led_end-1; i >= user_settings.led_offset; i--)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
             leds[i].setHSV(brightness, 255, 50);
@@ -1127,8 +1139,8 @@ void tickComplete(long mm) // the boss is dead
     }
     else if (stageStartTime + 5500 > mm)
     {
-        int n = _max(map(((mm - stageStartTime)), 5000, 5500, user_settings.led_count, 0), 0);
-        for (int i = 0; i < n; i++)
+        int n = mapconstrain(((mm - stageStartTime)), 5000, 5500, user_settings.led_end, user_settings.led_offset);
+        for (int i = user_settings.led_offset; i < n; i++)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
             leds[i].setHSV(brightness, 255, 50);
@@ -1152,17 +1164,18 @@ void tickBossKilled(long mm) // boss funeral
     if (stageStartTime + 6500 > mm)
     {
         gHue++;
-        fill_rainbow(leds, user_settings.led_count, gHue, 7); // FastLED's built in rainbow
+        fill_rainbow(leds + user_settings.led_offset, LED_LENGTH, gHue, 7); // FastLED's built in rainbow
         if (random8() < 200)
         { // add glitter
-            leds[random16(user_settings.led_count)] += CRGB::White;
+            int idx = user_settings.led_offset + random16(LED_LENGTH - 1);
+            leds[idx] += CRGB::White;
         }
         SFXbosskilled();
     }
     else if (stageStartTime + 7000 > mm)
     {
-        int n = _max(map(((mm - stageStartTime)), 5000, 5500, user_settings.led_count, 0), 0);
-        for (int i = 0; i < n; i++)
+        int n = mapconstrain(((mm - stageStartTime)), 5000, 5500, user_settings.led_end, user_settings.led_offset);
+        for (int i = user_settings.led_offset; i < n; i++)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
             leds[i].setHSV(brightness, 255, 50);
@@ -1187,14 +1200,14 @@ void tickDie(long mm)
         int brightness = map((mm - stageStartTime), 0, duration, 255, 150); // this allows a fade from white to red
 
         // fill up
-        int n = _max(map(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) + width), 0);
+        int n = mapconstrain(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) + width);
         for (int i = getLED(playerPosition); i <= n; i++)
         {
             leds[i] = CRGB(255, brightness, brightness);
         }
 
         // fill to down
-        n = _max(map(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) - width), 0);
+        n = mapconstrain(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) - width);
         for (int i = getLED(playerPosition); i >= n; i--)
         {
             leds[i] = CRGB(255, brightness, brightness);
@@ -1204,19 +1217,18 @@ void tickDie(long mm)
 
 void tickGameover(long mm)
 {
-
     int brightness = 0;
 
     if (stageStartTime + GAMEOVER_SPREAD_DURATION > mm) // Spread red from player position to top and bottom
     {
         // fill to top
-        int n = _max(map(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_count), 0);
-        for (int i = getLED(playerPosition); i <= n; i++)
+        int n = mapconstrain(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_end);
+        for (int i = getLED(playerPosition); i < n; i++)
         {
             leds[i] = CRGB(255, 0, 0);
         }
         // fill to bottom
-        n = _max(map(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), 0), 0);
+        n = mapconstrain(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_offset);
         for (int i = getLED(playerPosition); i >= n; i--)
         {
             leds[i] = CRGB(255, 0, 0);
@@ -1225,10 +1237,10 @@ void tickGameover(long mm)
     }
     else if (stageStartTime + GAMEOVER_FADE_DURATION > mm) // fade down to bottom and fade brightness
     {
-        int n = _max(map(((mm - stageStartTime)), GAMEOVER_FADE_DURATION, GAMEOVER_SPREAD_DURATION, user_settings.led_count, 0), 0);
+        int n = mapconstrain(((mm - stageStartTime)), GAMEOVER_FADE_DURATION, GAMEOVER_SPREAD_DURATION, user_settings.led_end, user_settings.led_offset);
         brightness = map(((mm - stageStartTime)), GAMEOVER_SPREAD_DURATION, GAMEOVER_FADE_DURATION, 200, 0);
 
-        for (int i = 0; i <= n; i++)
+        for (int i = user_settings.led_offset; i < n; i++)
         {
             leds[i] = CRGB(brightness, 0, 0);
         }
@@ -1242,8 +1254,8 @@ void tickWin(long mm)
     FastLED.clear();
     if (stageStartTime + WIN_FILL_DURATION > mm)
     {
-        int n = _max(map(((mm - stageStartTime)), 0, WIN_FILL_DURATION, user_settings.led_count, 0), 0); // fill from top to bottom
-        for (int i = user_settings.led_count; i >= n; i--)
+        int n = mapconstrain(((mm - stageStartTime)), 0, WIN_FILL_DURATION, user_settings.led_end, user_settings.led_offset); // fill from top to bottom
+        for (int i = user_settings.led_end; i >= n; i--)
         {
             brightness = user_settings.led_brightness;
             leds[i] = CRGB(0, brightness, 0);
@@ -1252,8 +1264,8 @@ void tickWin(long mm)
     }
     else if (stageStartTime + WIN_CLEAR_DURATION > mm)
     {
-        int n = _max(map(((mm - stageStartTime)), WIN_FILL_DURATION, WIN_CLEAR_DURATION, user_settings.led_count, 0), 0); // clear from top to bottom
-        for (int i = 0; i < n; i++)
+        int n = mapconstrain(((mm - stageStartTime)), WIN_FILL_DURATION, WIN_CLEAR_DURATION, user_settings.led_end, user_settings.led_offset); // clear from top to bottom
+        for (int i = user_settings.led_offset; i < n; i++)
         {
             brightness = user_settings.led_brightness;
             leds[i] = CRGB(0, brightness, 0);
@@ -1261,8 +1273,8 @@ void tickWin(long mm)
         SFXwin();
     }
     else if (stageStartTime + WIN_OFF_DURATION > mm)
-    { // wait a while with leds off
-        leds[0] = CRGB(0, user_settings.led_brightness, 0);
+    { 
+        // wait a while with leds off
     }
     else
     {
@@ -1278,7 +1290,7 @@ void drawLives()
 
     static const int ledsPerLife = 4;
 
-    int pos = 0;
+    int pos = user_settings.led_offset;
     for (int i = 0; i < lives; i++)
     {
         for (int j = 0; j < ledsPerLife; j++)
@@ -1300,7 +1312,7 @@ void drawAttack()
     if (!attacking)
         return;
     int n = map(millis() - attackMillis, 0, ATTACK_DURATION, 100, 5);
-    for (int i = attackStart + 1; i <= attackEnd - 1; i++)
+    for (int i = attackStartLED + 1; i <= attackEndLED - 1; i++)
     {
         leds[i] = CRGB(0, 0, n);
     }
@@ -1314,14 +1326,14 @@ void drawAttack()
         n = 0;
         leds[getLED(playerPosition)] = CRGB(0, 255, 0);
     }
-    leds[attackStart] = CRGB(n, n, 255);
-    leds[attackEnd] = CRGB(n, n, 255);
+    leds[attackStartLED] = CRGB(n, n, 255);
+    leds[attackEndLED] = CRGB(n, n, 255);
 }
 
 int getLED(int pos)
 {
     // The world is 1000 pixels wide, this converts world units into an LED number
-    return constrain((int)map(pos, 0, VIRTUAL_LED_COUNT, 0, user_settings.led_count - 1), 0, user_settings.led_count - 1);
+    return mapconstrain(pos, 0, VIRTUAL_LED_COUNT, user_settings.led_offset, user_settings.led_end - 1);
 }
 
 bool inLava(int pos)
@@ -1631,13 +1643,13 @@ void Fire2012()
     bool gReverseDirection = false;
 
     // Step 1.  Cool down every cell a little
-    for (int i = 0; i < user_settings.led_count; i++)
+    FOREACH_LED(i)
     {
-        heat[i] = qsub8(heat[i], random8(0, ((COOLING * 10) / user_settings.led_count) + 2));
+        heat[i] = qsub8(heat[i], random8(0, ((COOLING * 10) / LED_LENGTH) + 2));
     }
 
     // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-    for (int k = user_settings.led_count - 1; k >= 2; k--)
+    FOREACH_LED(k)
     {
         heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
     }
@@ -1650,13 +1662,13 @@ void Fire2012()
     }
 
     // Step 4.  Map from heat cells to LED colors
-    for (int j = 0; j < user_settings.led_count; j++)
+    FOREACH_LED(j)
     {
         CRGB color = HeatColor(heat[j]);
         int pixelnumber;
         if (gReverseDirection)
         {
-            pixelnumber = (user_settings.led_count - 1) - j;
+            pixelnumber = (user_settings.led_end - 1) - j;
         }
         else
         {
@@ -1668,20 +1680,18 @@ void Fire2012()
 
 void LED_march()
 {
-    int n, b, c, i;
-
     long mm = millis();
 
-    for (i = 0; i < user_settings.led_count; i++)
+    FOREACH_LED(i)
     {
         leds[i].nscale8(250);
     }
 
     // Marching green <> orange
-    n = (mm / 250) % 10;
-    b = 10 + ((sin(mm / 500.00) + 1) * 20.00);
-    c = 20 + ((sin(mm / 5000.00) + 1) * 33);
-    for (i = 0; i < user_settings.led_count; i++)
+    int n = (mm / 250) % 10;
+    int b = 10 + ((sin(mm / 500.00) + 1) * 20.00);
+    int c = 20 + ((sin(mm / 5000.00) + 1) * 33);
+    FOREACH_LED(i)
     {
         if (i % 10 == n)
         {
@@ -1693,15 +1703,14 @@ void LED_march()
 void random_LED_flashes()
 {
     long mm = millis();
-    int i;
 
-    for (i = 0; i < user_settings.led_count; i++)
+    FOREACH_LED(i)
     {
         leds[i].nscale8(250);
     }
 
     randomSeed(mm);
-    for (i = 0; i < user_settings.led_count; i++)
+    FOREACH_LED(i)
     {
         if (random8(20) == 0)
         {
@@ -1717,19 +1726,19 @@ void sinelon()
     gHue++;
 
     // a colored dot sweeping back and forth, with fading trails
-    fadeToBlackBy(leds, user_settings.led_count, 20);
-    int pos = beatsin16(13, 0, user_settings.led_count - 1);
+    fadeToBlackBy(leds + user_settings.led_offset, LED_LENGTH, 20);
+    int pos = beatsin16(13, user_settings.led_offset, user_settings.led_end - 1);
     leds[pos] += CHSV(gHue, 255, 192);
 }
 
 void juggle()
 {
     // eight colored dots, weaving in and out of sync with each other
-    fadeToBlackBy(leds, user_settings.led_count, 20);
+    fadeToBlackBy(leds + user_settings.led_offset, LED_LENGTH, 20);
     byte dothue = 0;
     for (int i = 0; i < 4; i++)
     {
-        leds[beatsin16(i + 7, 0, user_settings.led_count - 1)] |= CHSV(dothue, 200, 255);
+        leds[beatsin16(i + 7, user_settings.led_offset, user_settings.led_end - 1)] |= CHSV(dothue, 200, 255);
         dothue += 64;
     }
 }
@@ -1790,13 +1799,13 @@ int colorWipe(CRGB color, int wait)
     // fill led by led with one color
     static long rmm = 0;
     long cmm = millis() - rmm;
-    uint32_t i = (cmm / wait);
+    uint32_t i = user_settings.led_offset + (cmm / wait);
 
-    if (i >= user_settings.led_count)
+    if (i >= user_settings.led_end)
     {
         rmm = millis();
         cmm = 0;
-        if (i == (user_settings.led_count))
+        if (i == (user_settings.led_end))
         {
             return 1;
         }
@@ -1811,9 +1820,9 @@ void colorWheel()
 {
     // cycle hue of each LED with offset between the LEDs
     long mm = millis();
-    for (int pos = 0; pos < user_settings.led_count; pos++)
+    for (int pos = user_settings.led_offset; pos < user_settings.led_end; pos++)
     {
-        leds[pos] = CHSV((mm / 10) - (pos * 255 / user_settings.led_count), 255, 255);
+        leds[pos] = CHSV((mm / 10) - (pos * 255 / LED_LENGTH), 255, 255);
     }
 }
 
@@ -1822,7 +1831,7 @@ void colorCircle()
 {
     // cycle hue of whole stripe
     long mm = millis();
-    for (int pos = 0; pos < user_settings.led_count; pos++)
+    for (int pos = user_settings.led_offset; pos < user_settings.led_end; pos++)
     {
         leds[pos] = CHSV(-mm / 50, 255, 255);
     }
