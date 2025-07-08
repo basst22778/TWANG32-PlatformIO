@@ -157,16 +157,14 @@ static TaskHandle_t FastLEDshowTaskHandle = 0;
 static TaskHandle_t userTaskHandle = 0;
 
 long mapconstrain(long x, long in_min, long in_max, long out_min, long out_max) {
+    assert(in_min < in_max);
+
     if (x <= in_min)
         return out_min;
     if (x >= in_max)
         return out_max;
 
     const long run = in_max - in_min;
-    if(run == 0){
-        log_e("map(): Invalid input range, min == max");
-        return -1; // AVR returns -1, SAM returns 0
-    }
     const long rise = out_max - out_min;
     const long delta = x - in_min;
     return (delta * rise) / run + out_min;
@@ -1120,8 +1118,8 @@ void tickComplete(long mm) // the boss is dead
     SFXcomplete();
     if (stageStartTime + 500 > mm)
     {
-        int n = mapconstrain(((mm - stageStartTime)), 0, 500, user_settings.led_end, user_settings.led_offset);
-        for (int i = user_settings.led_end-1; i >= n; i--)
+        int n = mapconstrain(mm - stageStartTime, 0, 500, user_settings.led_end, user_settings.led_offset);
+        for (int i = user_settings.led_end-1; i > n; i--)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
             leds[i].setHSV(brightness, 255, 50);
@@ -1252,8 +1250,8 @@ void tickWin(long mm)
     FastLED.clear();
     if (stageStartTime + WIN_FILL_DURATION > mm)
     {
-        int n = mapconstrain(((mm - stageStartTime)), 0, WIN_FILL_DURATION, user_settings.led_end, user_settings.led_offset); // fill from top to bottom
-        for (int i = user_settings.led_end; i >= n; i--)
+        int n = mapconstrain(mm - stageStartTime, 0, WIN_FILL_DURATION, user_settings.led_end, user_settings.led_offset); // fill from top to bottom
+        for (int i = user_settings.led_end-1; i >= n; i--)
         {
             brightness = user_settings.led_brightness;
             leds[i] = CRGB(0, brightness, 0);
