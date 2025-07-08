@@ -17,7 +17,6 @@ Modifications and bug fixes by [Janek](https://janek.ing).
 - WiFi and Bluetooth.
 
 **Current State**
-
 - All of the Arduino version game features are functional.
 - The game now has a WiFi access port to get game stats. Connect a smartphone or computer to see them.
     - **SSID:** TWANG_AP
@@ -45,19 +44,8 @@ Modifications and bug fixes by [Janek](https://janek.ing).
 - fix configuration over serial
 - more screensavers
 - remove running median dependency
+- add option to set led offset and screensaver brightness
 - many small code quality improvements
-
-## TO DO List:
-
-- Wireless features
-    - 2 Player features by linking controllers. TBD
--  Settings:
-    - Change strip type.
--  Digitized Audio
-    - Currently the port uses the same square wave tones of the the Arduino version.
-    - I want to convert to digitized high quality sound effects.
-    - Possibly mix multiple sounds so things like lava and movement sound good at the same time.
-- Better looking mobile web interface (looks more like a web app)
 
 ## Required libraries:
 * [FastLED](http://fastled.io/)
@@ -76,7 +64,7 @@ See [Buildlog.net Blog](http://www.buildlog.net/blog?s=twang) for more details.
 ## Enclosure
 You have two options:
 1. The original one by bdring, which you can find as an [STL here](http://www.buildlog.net/blog/wp-content/uploads/2018/04/twang32_stl.zip) or as [STEP in this repo](/parts/step/original/)
-1. The one by Janek, which has several modifications:
+1. [The one by Janek](/parts/step/usb-speakerless/), which has several modifications:
     1. No speaker and therefore slightly smaller (and slightly more water resistant)
     1. Made to connect using [these USB-C sockets](https://www.amazon.de/dp/B0CPLRH4W6)
     1. Inside mounting holes perfect for a 20x20 2,54mm stripboard
@@ -93,6 +81,17 @@ You have two options:
 - 21 - Accelerometer SDA (or the equivalent I²C pin on your board)
 - 22 - Accelerometer SCL (or the equivalent I²C pin on your board)
 - 25 - DAC (analog audio out, unamplified)
+
+## TO DO List:
+- Wireless features
+    - 2 Player features by linking controllers. TBD
+-  Settings:
+    - Change strip type.
+-  Digitized Audio
+    - Currently the port uses the same square wave tones of the the Arduino version.
+    - I want to convert to digitized high quality sound effects.
+    - Possibly mix multiple sounds so things like lava and movement sound good at the same time.
+- Better looking mobile web interface (looks more like a web app)
 
 ## Overview
 The following is a quick overview of the code to help you understand and tweak the game to your needs.

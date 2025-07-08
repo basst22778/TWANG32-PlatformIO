@@ -29,7 +29,7 @@
 
 //
 
-#define VERSION "2018-06-28"
+#define VERSION "2025-07-19"
 
 #include <FastLED.h>
 #include <Wire.h>
@@ -328,8 +328,7 @@ void loop()
             if (lastInputTime + TIMEOUT < mm && stage != SCREENSAVER)
             {
                 stage = SCREENSAVER;
-                // dim when going to screensaver
-                FastLED.setBrightness(constrain(user_settings.led_brightness / 4, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
+                FastLED.setBrightness(user_settings.led_brightnessScreensaver);
                 Serial.println("Going to screensaver...");
             }
         }
@@ -461,7 +460,6 @@ void loop()
 void loadLevel(int num)
 {
     // leave these alone
-    // FastLED.setBrightness(user_settings.led_brightness);
     updateLives();
     cleanupLevel();
     playerAlive = 1;
