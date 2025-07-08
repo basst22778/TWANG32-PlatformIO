@@ -1647,7 +1647,7 @@ void Fire2012()
     }
 
     // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-    FOREACH_LED(k)
+    for (int k = user_settings.led_end - 1; k >= user_settings.led_offset + 2; k--)
     {
         heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
     }
@@ -1655,7 +1655,7 @@ void Fire2012()
     // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
     if (random8() < SPARKING)
     {
-        int y = random8(7);
+        int y = user_settings.led_offset + random8(7);
         heat[y] = qadd8(heat[y], random8(160, 255));
     }
 
