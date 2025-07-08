@@ -82,7 +82,7 @@ int attackStartLED = 0, attackEndLED = 0; // leds affected by attack
 #define STARTUP_FADE_DUR 1500
 
 #define GAMEOVER_SPREAD_DURATION 1000
-#define GAMEOVER_FADE_DURATION 1500
+#define GAMEOVER_FADE_DURATION 3000
 
 #define WIN_FILL_DURATION 500 // sound has a freq effect that might need to be adjusted
 #define WIN_CLEAR_DURATION 1000
@@ -840,7 +840,7 @@ void tickStartup(long mm)
     FastLED.clear();
     if (stageStartTime + STARTUP_WIPEUP_DUR > mm) // fill to the top with green
     {
-        int n = mapconstrain(((mm - stageStartTime)), 0, STARTUP_WIPEUP_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
+        int n = mapconstrain(mm - stageStartTime, 0, STARTUP_WIPEUP_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
         for (int i = user_settings.led_offset; i < n; i++)
         {
             leds[i] = CRGB(0, 255, 0);
@@ -861,8 +861,8 @@ void tickStartup(long mm)
     }
     else if (stageStartTime + STARTUP_FADE_DUR > mm) // fade it out to bottom
     {
-        int n = mapconstrain(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
-        int brightness = mapconstrain(((mm - stageStartTime)), STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, 255, 0);
+        int n = mapconstrain(mm - stageStartTime, STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
+        int brightness = mapconstrain(mm - stageStartTime, STARTUP_SPARKLE_DUR, STARTUP_FADE_DUR, 255, 0);
 
         for (int i = n; i < user_settings.led_end; i++)
         {
@@ -1135,7 +1135,7 @@ void tickComplete(long mm) // the boss is dead
     }
     else if (stageStartTime + 5500 > mm)
     {
-        int n = mapconstrain(((mm - stageStartTime)), 5000, 5500, user_settings.led_end, user_settings.led_offset);
+        int n = mapconstrain(mm - stageStartTime, 5000, 5500, user_settings.led_end, user_settings.led_offset);
         for (int i = user_settings.led_offset; i < n; i++)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
@@ -1152,7 +1152,7 @@ void tickBossKilled(long mm) // boss funeral
 {
     static uint8_t gHue = 0;
 
-    FastLED.setBrightness(constrain(user_settings.led_brightness * 2, MIN_BRIGHTNESS, MAX_BRIGHTNESS)); // super bright!
+    FastLED.setBrightness(min(user_settings.led_brightness * 2, MAX_BRIGHTNESS)); // super bright!
 
     int brightness = 0;
     FastLED.clear();
@@ -1170,7 +1170,7 @@ void tickBossKilled(long mm) // boss funeral
     }
     else if (stageStartTime + 7000 > mm)
     {
-        int n = mapconstrain(((mm - stageStartTime)), 5000, 5500, user_settings.led_end, user_settings.led_offset);
+        int n = mapconstrain(mm - stageStartTime, 5000, 5500, user_settings.led_end, user_settings.led_offset);
         for (int i = user_settings.led_offset; i < n; i++)
         {
             brightness = (sin(((i * 10) + mm) / 500.0) + 1) * 255;
@@ -1193,17 +1193,17 @@ void tickDie(long mm)
     if (stageStartTime + duration > mm)
     { // Spread red from player position up and down the width
 
-        int brightness = map((mm - stageStartTime), 0, duration, 255, 150); // this allows a fade from white to red
+        int brightness = map(mm - stageStartTime, 0, duration, 255, 150); // this allows a fade from white to red
 
         // fill up
-        int n = mapconstrain(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) + width);
+        int n = mapconstrain(mm - stageStartTime, 0, duration, getLED(playerPosition), getLED(playerPosition) + width);
         for (int i = getLED(playerPosition); i <= n; i++)
         {
             leds[i] = CRGB(255, brightness, brightness);
         }
 
         // fill to down
-        n = mapconstrain(((mm - stageStartTime)), 0, duration, getLED(playerPosition), getLED(playerPosition) - width);
+        n = mapconstrain(mm - stageStartTime, 0, duration, getLED(playerPosition), getLED(playerPosition) - width);
         for (int i = getLED(playerPosition); i >= n; i--)
         {
             leds[i] = CRGB(255, brightness, brightness);
@@ -1218,25 +1218,24 @@ void tickGameover(long mm)
     if (stageStartTime + GAMEOVER_SPREAD_DURATION > mm) // Spread red from player position to top and bottom
     {
         // fill to top
-        int n = mapconstrain(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_end);
+        int n = mapconstrain(mm - stageStartTime, 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_end);
         for (int i = getLED(playerPosition); i < n; i++)
         {
             leds[i] = CRGB(255, 0, 0);
         }
         // fill to bottom
-        n = mapconstrain(((mm - stageStartTime)), 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_offset);
+        n = mapconstrain(mm - stageStartTime, 0, GAMEOVER_SPREAD_DURATION, getLED(playerPosition), user_settings.led_offset);
         for (int i = getLED(playerPosition); i >= n; i--)
         {
             leds[i] = CRGB(255, 0, 0);
         }
         SFXgameover();
     }
-    else if (stageStartTime + GAMEOVER_FADE_DURATION > mm) // fade down to bottom and fade brightness
+    else if (stageStartTime + GAMEOVER_FADE_DURATION > mm) // fade brightness
     {
-        int n = mapconstrain(((mm - stageStartTime)), GAMEOVER_FADE_DURATION, GAMEOVER_SPREAD_DURATION, user_settings.led_end, user_settings.led_offset);
-        brightness = map(((mm - stageStartTime)), GAMEOVER_SPREAD_DURATION, GAMEOVER_FADE_DURATION, 200, 0);
+        brightness = mapconstrain(mm - stageStartTime, GAMEOVER_SPREAD_DURATION, GAMEOVER_FADE_DURATION-500, 200, 0);
 
-        for (int i = user_settings.led_offset; i < n; i++)
+        FOREACH_LED(i)
         {
             leds[i] = CRGB(brightness, 0, 0);
         }
@@ -1246,25 +1245,22 @@ void tickGameover(long mm)
 
 void tickWin(long mm)
 {
-    int brightness = 0;
     FastLED.clear();
     if (stageStartTime + WIN_FILL_DURATION > mm)
     {
         int n = mapconstrain(mm - stageStartTime, 0, WIN_FILL_DURATION, user_settings.led_end, user_settings.led_offset); // fill from top to bottom
         for (int i = user_settings.led_end-1; i >= n; i--)
         {
-            brightness = user_settings.led_brightness;
-            leds[i] = CRGB(0, brightness, 0);
+            leds[i] = CRGB(0, 255, 0);
         }
         SFXwin();
     }
     else if (stageStartTime + WIN_CLEAR_DURATION > mm)
     {
-        int n = mapconstrain(((mm - stageStartTime)), WIN_FILL_DURATION, WIN_CLEAR_DURATION, user_settings.led_end, user_settings.led_offset); // clear from top to bottom
+        int n = mapconstrain(mm - stageStartTime, WIN_FILL_DURATION, WIN_CLEAR_DURATION, user_settings.led_end, user_settings.led_offset); // clear from top to bottom
         for (int i = user_settings.led_offset; i < n; i++)
         {
-            brightness = user_settings.led_brightness;
-            leds[i] = CRGB(0, brightness, 0);
+            leds[i] = CRGB(0, 255, 0);
         }
         SFXwin();
     }
