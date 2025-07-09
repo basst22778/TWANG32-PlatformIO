@@ -145,7 +145,6 @@ int playerPositionModifier; // +/- adjustment to player position
 bool playerAlive;
 long killTime;
 int lives = LIVES_PER_LEVEL;
-bool lastLevel = false;
 
 #define FASTLED_SHOW_CORE 0 // -- The core to run FastLED.show()
 
@@ -431,6 +430,7 @@ void loop()
             {
                 FastLED.clear();
                 save_game_stats(false); // boss not killed
+                score = 0;
 
                 // restart from the beginning
                 stage = STARTUP;
@@ -447,13 +447,36 @@ void loop()
 // ---------------------------------
 // ------------ LEVELS -------------
 // ---------------------------------
+enum LEVELS {
+    INTRO=0,
+    ENEMY_INTRO,
+    SPAWNER_INTRO,
+    LAVA_INTRO,
+    LAVA_MOVING,
+    LAVA_SPREADING,
+    ENEMY_SIN_INTRO,
+    ENEMY_SIN_SWARM,
+    LAVA_MOVING_UP,
+    CONVEYOR_INTRO,
+    CONVEYOR_ENEMIES,
+    LAVA_SPREAD_FALL,
+    LAVA_RUN,
+    CONVEYOR_HALT_TEST,
+    SPAWNER_TRAIN,
+    SPAWNER_TRAIN_SKINNY,
+    SPAWNER_SPLIT,
+    SPAWNER_SPLIT_LAVA,
+    CONVEYOR_LAVA,
+    CONVEYOR_ENEMY_SIN,
+    BOSS, // This should always be the last valid level!
+};
+
 void loadLevel(int num)
 {
     // leave these alone
     updateLives();
     cleanupLevel();
     playerAlive = 1;
-    lastLevel = false; // this gets changed on the boss level
     FastLED.setBrightness(user_settings.led_brightness);
 
     /// Defaults...OK to change the following items in the levels below
@@ -463,7 +486,7 @@ void loadLevel(int num)
     /* ==== Level Editing Guide ===============
     Level creation is done by adding to or editing the switch statement below.
 
-    Add your level to the enum, then add a case statement for it in the switch.
+    Add your level to the enum above, then add a case statement for it in the switch.
     The order of levels in the enum determines their order in game. 
 
     TWANG uses a virtual 1000 LED grid. It will then scale that number to your strip, so if you
@@ -493,30 +516,6 @@ void loadLevel(int num)
     The size of the TWANG attack
       attack_width = xxx;
     */
-
-    enum LEVELS {
-        INTRO=0,
-        ENEMY_INTRO,
-        SPAWNER_INTRO,
-        LAVA_INTRO,
-        LAVA_MOVING,
-        LAVA_SPREADING,
-        ENEMY_SIN_INTRO,
-        ENEMY_SIN_SWARM,
-        LAVA_MOVING_UP,
-        CONVEYOR_INTRO,
-        CONVEYOR_ENEMIES,
-        LAVA_SPREAD_FALL,
-        LAVA_RUN,
-        CONVEYOR_HALT_TEST,
-        SPAWNER_TRAIN,
-        SPAWNER_TRAIN_SKINNY,
-        SPAWNER_SPLIT,
-        SPAWNER_SPLIT_LAVA,
-        CONVEYOR_LAVA,
-        CONVEYOR_ENEMY_SIN,
-        BOSS, // This should always be the last valid level!
-    };
 
     if (num < 0 || num > BOSS)
     {
@@ -651,7 +650,6 @@ void loadLevel(int num)
 
 void spawnBoss()
 {
-    lastLevel = true;
     boss.Spawn();
     moveBoss();
 }
@@ -774,7 +772,7 @@ void levelComplete()
     stageStartTime = millis();
     stage = WIN;
 
-    if (lastLevel)
+    if (levelNumber == BOSS)
     {
         stage = BOSS_KILLED;
     }
@@ -788,17 +786,13 @@ void nextLevel()
 {
     levelNumber++;
 
-    if (lastLevel)
+    if (levelNumber > BOSS)
     {
-        stage = STARTUP;
-        stageStartTime = millis();
-        lives = user_settings.lives_per_level;
+        levelNumber = 0;
     }
-    else
-    {
-        lives = user_settings.lives_per_level;
-        loadLevel(levelNumber);
-    }
+
+    loadLevel(levelNumber);
+    lives = user_settings.lives_per_level;
 }
 
 void die()
@@ -1173,7 +1167,10 @@ void tickBossKilled(long mm) // boss funeral
     else
     {
         FastLED.setBrightness(user_settings.led_brightness);
-        nextLevel();
+        stage = STARTUP;
+        stageStartTime = millis();
+        save_game_stats(true);
+        lives = user_settings.lives_per_level;
     }
 }
 
@@ -1347,7 +1344,7 @@ void save_game_stats(bool bossKill)
     user_settings.games_played += 1;
     user_settings.total_points += score;
     if (score > user_settings.high_score)
-        user_settings.high_score += score;
+        user_settings.high_score = score;
     if (bossKill)
         user_settings.boss_kills += 1;
 
