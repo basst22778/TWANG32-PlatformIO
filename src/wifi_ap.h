@@ -63,6 +63,14 @@ void sendStatsPage(WiFiClient client)
 	client.print("<li>Boss kills: ");
 	client.print(user_settings.boss_kills);
 	client.println("</li>");
+	client.println("<p></p>"); // add some whitespace
+	client.print("<li>Current level: ");
+	client.print(levelNumber);
+	client.println("</li>");
+	client.print("<li>Current score: ");
+	client.print(score);
+	client.println("</li>");
+	client.println("</ul>");
 
 	client.print("<button onClick=\"location.href = 'http://192.168.4.1'\">Refresh</button>");
 
@@ -105,6 +113,10 @@ void sendStatsPage(WiFiClient client)
 	client.print(user_settings.lives_per_level);
 	client.print("' min='1' max='9'><input type='submit'></form></td></tr>");
 
+	client.print("<tr><td>Skip to level (0-20)</td><td><form><input type='number' name='V' value='");
+	client.print(levelNumber);
+	client.print("' min='0' max='20'><input type='submit'></form></td></tr>");
+
 	client.print("</table>");
 
 #ifdef ENABLE_PROMETHEUS_METRICS_ENDPOINT
@@ -141,7 +153,7 @@ static void sendMetricsPage(WiFiClient client)
 #undef __prom_metric
 #endif // ENABLE_PROMETHEUS_METRICS_ENDPOINT
 
-void ap_client_check()
+settings_param_t ap_client_check()
 {
 	int cnt;
 	bool newconn = false;
@@ -150,6 +162,8 @@ void ap_client_check()
 
 	bool currentLineIsBlank = true;
 	PAGE_TO_SEND page_to_send = Stats;
+
+	settings_param_t param = SET_PARAM_INVALID;
 
 	while (client.connected())
 	{
@@ -177,9 +191,6 @@ void ap_client_check()
 			}
 			if (c == '\n')
 			{
-				// you're starting a new line
-				currentLineIsBlank = true;
-
 				if (strstr(linebuf, "GET /?") > 0)
 				{
 					String line = String(linebuf);
@@ -193,7 +204,7 @@ void ap_client_check()
 					// if it is not numeric, it will convert to 0.
 					// The the change_setting function will make sure the range is OK
 
-					settings_set(settings_param_t{.code = paramCode, .hasValue = true, .newValue = (uint16_t)val.toInt()});
+					param = settings_param_t{.code = paramCode, .hasValue = true, .newValue = (uint16_t)val.toInt()};
 
 					page_to_send = Stats;
 				}
@@ -216,4 +227,6 @@ void ap_client_check()
 			}
 		}
 	}
+
+	return param;
 }

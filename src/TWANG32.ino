@@ -59,7 +59,6 @@
 
 // GAME
 long previousMillis = 0; // Time of the last redraw
-int levelNumber = 0;
 
 #define TIMEOUT 20000 // time until screen saver in milliseconds
 
@@ -147,8 +146,6 @@ bool playerAlive;
 long killTime;
 int lives = LIVES_PER_LEVEL;
 bool lastLevel = false;
-
-int score = 0;
 
 #define FASTLED_SHOW_CORE 0 // -- The core to run FastLED.show()
 
@@ -257,21 +254,16 @@ void loop()
 {
     long mm = millis();
 
-    ap_client_check(); // check for web client
+    settings_param_t param = ap_client_check(); // check for web client
 	if (Serial.available())
 	{
-		settings_param_t param = settings_processSerial(Serial.read());
-        if (param.code == 'V' && param.hasValue)
-        {
-            Serial.printf("Skipping to level %d...\r\n", param.newValue);
-            levelNumber = param.newValue;
-            loadLevel(levelNumber);
-        }
-        else
-        {
-            settings_set(param);
-        }
+        // will overwrite if ap page is submitted at the same time, but
+        // that will almost never happen and if it does, that's life...
+		param = settings_processSerial(Serial.read());
 	}
+    settings_set(param);
+    if (param.code == 'V' && param.hasValue)
+        loadLevel(levelNumber);
 
     if (stage == PLAY)
     {

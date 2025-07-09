@@ -98,6 +98,8 @@ void reset_settings();
 const settings_param_t SET_PARAM_INVALID = {0};
 
 settings_t user_settings;
+int levelNumber = 0;
+int score = 0;
 
 #define READ_BUFFER_LEN 10
 char readBuffer[READ_BUFFER_LEN];
@@ -183,9 +185,14 @@ settings_param_t settings_fromString(char *line, int len)
 	return {.code = line[0], .hasValue = true, .newValue = val};
 }
 
+bool settings_param_valid(settings_param_t param)
+{
+	return param.code != 0;
+}
+
 void settings_set(settings_param_t param)
 {
-	if (memcmp(&param, &SET_PARAM_INVALID, sizeof(param)) == 0)
+	if (!settings_param_valid(param))
 		return;
 
 	lastInputTime = millis(); // reset screensaver count
@@ -235,6 +242,10 @@ void settings_set(settings_param_t param)
 				user_settings.lives_per_level = constrain(param.newValue, MIN_LIVES_PER_LEVEL, MAX_LIVES_PER_LEVEL);
 				settings_eeprom_write();
 				Serial.printf("Set lives to %d\r\n", user_settings.lives_per_level);
+				break;
+			case 'V': // skip to level
+				levelNumber = param.newValue;
+				Serial.printf("Skipping to level %d...\r\n", param.newValue);
 				break;
 			default:
 				Serial.printf("ERROR: Unknown setting %c=%d\r\n", param.code, param.newValue);
