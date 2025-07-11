@@ -1574,6 +1574,7 @@ void screenSaverTick()
     case COLOR_WHEEL: colorWheel(); break;
     case COLOR_CIRCLE: colorCircle(); break; 
     case RANDOM_FLASHES: random_LED_flashes(); break;
+    // default: juggle(); break; // to test individual animations
     }
 }
 
@@ -1702,26 +1703,66 @@ void random_LED_flashes()
 
 void sinelon()
 {
-    static uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+    // this is necessary so we don't fill the whole strip after switching animations
+    // NOTE (JS, 11.07.25): Only tested with 300 leds, might need increasing for 1000
+    const static int MAX_POS_DIFF_TO_BRIDGE = 16;
+    static int oldPos = 0;
 
+    static uint8_t gHue = 0; // rotating "base color" used by many of the patterns
     gHue++;
 
     // a colored dot sweeping back and forth, with fading trails
     fadeToBlackBy(leds + user_settings.led_offset, LED_LENGTH, 20);
     int pos = beatsin16(13, user_settings.led_offset, user_settings.led_end - 1);
+    // On big strips dots move very fast, leaving gaps between their old and new
+    // position, we fill these in with linear interpolated values
+    // does not properly track the "bounces" at the end, but you barely notice that
+    if (abs(pos - oldPos) <= MAX_POS_DIFF_TO_BRIDGE)
+    {
+        int smaller = pos < oldPos ? pos : oldPos;
+        int bigger =  pos > oldPos ? pos : oldPos;
+        for (int pdx = smaller+1; pdx < bigger; ++pdx)
+        {
+            float scale = 1.f - 20.f/256.f * (pdx - oldPos) / (pos - oldPos);
+            leds[pdx] += CHSV(gHue * scale, 255 * scale, 192 * scale);
+        }
+    }
     leds[pos] += CHSV(gHue, 255, 192);
+    oldPos = pos;
 }
 
 void juggle()
 {
-    // eight colored dots, weaving in and out of sync with each other
+    const static int DOT_COUNT = 4;
+    // this is necessary so we don't fill the whole strip after switching animations
+    // NOTE (JS, 11.07.25): Only tested with 300 leds, might need increasing for 1000
+    const static int MAX_POS_DIFF_TO_BRIDGE = 16;
+    static int oldPos[DOT_COUNT] = {0};
+    int pos[DOT_COUNT] = {0};
+
+    // colored dots, weaving in and out of sync with each other
     fadeToBlackBy(leds + user_settings.led_offset, LED_LENGTH, 20);
     byte dothue = 0;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < DOT_COUNT; i++)
     {
-        leds[beatsin16(i + 7, user_settings.led_offset, user_settings.led_end - 1)] |= CHSV(dothue, 200, 255);
-        dothue += 64;
+        pos[i] = beatsin16(i + 7, user_settings.led_offset, user_settings.led_end - 1);
+        // On big strips dots move very fast, leaving gaps between their old and new
+        // position, we fill these in with linear interpolated values
+        // does not properly track the "bounces" at the end, but you barely notice that
+        if (abs(pos[i] - oldPos[i]) <= MAX_POS_DIFF_TO_BRIDGE)
+        {
+            int smaller = pos[i] < oldPos[i] ? pos[i] : oldPos[i];
+            int bigger =  pos[i] > oldPos[i] ? pos[i] : oldPos[i];
+            for (int pdx = smaller+1; pdx < bigger; ++pdx)
+            {
+                float scale = 1.f - 20.f/256.f * (pdx - oldPos[i]) / (pos[i] - oldPos[i]);
+                leds[pdx] |= CHSV(dothue * scale, 200 * scale, 255 * scale);
+            }
+        }
+        leds[pos[i]] |= CHSV(dothue, 200, 255);
+        dothue += 256 / DOT_COUNT;
     }
+    memcpy(&oldPos, &pos, sizeof(oldPos));
 }
 
 void colorWipes()
