@@ -542,20 +542,19 @@ void loadLevel(int num)
     case LAVA_MOVING:
         spawnLava(700, 800, 2000, 2000, 0, Lava::OFF, 0, -0.5);
         spawnEnemy(450, 0, 1, 0);
-        spawnEnemy(950, 0, 1, 0);
         spawnSpawner(950, 4500, 3, 0, -2000);
         break;
     case LAVA_SPREADING:
         spawnLava(350, 400, 2000, 2000, 0, Lava::OFF, 0.2, 0);
-        spawnLava(800, 850, 2000, 2000, 0, Lava::OFF, 0.2, 0);
-        spawnEnemy(450, 0, 1, 0);
+        spawnLava(750, 800, 2000, 2000, 0, Lava::OFF, 0.2, 0);
+        spawnEnemy(400, 0, 2, 0);
         spawnEnemy(900, 0, 2, 0);
         break;
     case ENEMY_SIN_INTRO:
         spawnEnemy(700, 1, 7, 275);
         spawnEnemy(500, 1, 5, 250);
         break;
-    case ENEMY_SIN_SWARM:
+    case ENEMY_SIN_SWARM: 
         spawnEnemy(700, 1, 4, 275); // 425..975
         spawnEnemy(600, 1, 6, 300); // 300..900
 
@@ -567,7 +566,8 @@ void loadLevel(int num)
         break;
     case LAVA_MOVING_UP:
         playerPosition = 200;
-        spawnLava(10, 120, 2000, 2000, 0, Lava::OFF, 0, 0.5);
+        // TODO: Lava overlapping with spawners seems to be buggy and always kills
+        spawnLava(0, 100, 2000, 2000, 0, Lava::OFF, 1, 0);
         spawnEnemy(500, 0, 1, 0);
         spawnSpawner(950, 2500, 3, 0, -1000);
         break;
