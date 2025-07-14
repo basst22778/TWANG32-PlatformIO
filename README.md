@@ -20,7 +20,7 @@ Modifications and bug fixes by [Janek](https://janek.ing).
 - All of the Arduino version game features are functional.
 - The game now has a WiFi access port to get game stats. Connect a smartphone or computer to see them.
     - **SSID:** TWANG_AP
-    - **Password:** 12345666
+    - **Password:** 12345678
     - **URL:** 192.168.4.1
 - You can update these settings over WiFi
     - LED Count
@@ -63,8 +63,8 @@ See [Buildlog.net Blog](http://www.buildlog.net/blog?s=twang) for more details.
 
 ## Enclosure
 You have two options:
-1. The original one by bdring, which you can find as an [STL here](http://www.buildlog.net/blog/wp-content/uploads/2018/04/twang32_stl.zip) or as [STEP in this repo](/parts/step/original/)
-1. [The one by Janek](/parts/step/usb-speakerless/), which has several modifications:
+1. The original one by bdring, which you can find as [STL](/parts/stl/original/) or as [STEP files](/parts/step/original/) in this repo
+1. The one by Janek as [STL](/parts/stl/usb-speakerless/) or [STEP](/parts/step/usb-speakerless/), which has several modifications:
     1. No speaker and therefore slightly smaller (and slightly more water resistant)
     1. Made to connect using [these USB-C sockets](https://www.amazon.de/dp/B0CPLRH4W6)
     1. Inside mounting holes perfect for a 20x20 2,54mm stripboard
