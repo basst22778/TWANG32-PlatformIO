@@ -526,7 +526,7 @@ void loadLevel(int num)
     switch (num)
     {
     case INTRO: 
-        playerPosition = 200;
+        playerPosition = 150;
         break;
     case ENEMY_INTRO:
         spawnEnemy(900, 0, 1, 0);
@@ -1222,7 +1222,7 @@ void tickGameover(long mm)
     }
     else if (stageStartTime + GAMEOVER_FADE_DURATION > mm) // fade brightness
     {
-        brightness = mapconstrain(mm - stageStartTime, GAMEOVER_SPREAD_DURATION, GAMEOVER_FADE_DURATION-500, 200, 0);
+        brightness = mapconstrain(mm - stageStartTime, GAMEOVER_SPREAD_DURATION, GAMEOVER_FADE_DURATION-500, 255, 0);
 
         FOREACH_LED(i)
         {
@@ -1372,23 +1372,20 @@ bool getInput()
 
     int a = (JOYSTICK_ORIENTATION == 0 ? accelgyro.ax : (JOYSTICK_ORIENTATION == 1 ? accelgyro.ay : accelgyro.az)) / 166;
     int g = (JOYSTICK_ORIENTATION == 0 ? accelgyro.gx : (JOYSTICK_ORIENTATION == 1 ? accelgyro.gy : accelgyro.gz));
+    int ra = 0;
+    int rg = 0;
     
     if (accelgyro_ref.connected)
     {
         connected = accelgyro_ref.getMotion6();
         if (connected)
         {
-            a -= (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.ax : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.ay : accelgyro_ref.az)) / 166;
-            g -= (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.gx : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.gy : accelgyro_ref.gz));
+            ra = (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.ax : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.ay : accelgyro_ref.az)) / 166;
+            rg = (JOYSTICK_ORIENTATION == 0 ? accelgyro_ref.gx : (JOYSTICK_ORIENTATION == 1 ? accelgyro_ref.gy : accelgyro_ref.gz));
+            a -= ra;
+            g -= rg;
         }
     }
-
-#ifdef JOYSTICK_DEBUG
-    Serial.print("a:");
-    Serial.println(a);
-    Serial.print("g:");
-    Serial.println(g);
-#endif
 
     if (abs(a) < user_settings.joystick_deadzone)
         a = 0;
@@ -1407,8 +1404,18 @@ bool getInput()
     joystickWobble = abs(sample_highest(&MPUWobbleSamples));
 
 #ifdef JOYSTICK_DEBUG
-    Serial.print("tilt:"); Serial.println(joystickTilt);
-    Serial.print("wobble:"); Serial.println(joystickWobble);
+    static unsigned long lastInputPrint = 0;
+    #define PRINT_INTERVAL 500
+    if (millis() - lastInputPrint > PRINT_INTERVAL)
+    {
+        Serial.printf("Joystick  - a = (%6d, %6d, %6d), g = (%6d, %6d, %6d)\n", 
+                accelgyro.ax, accelgyro.ay, accelgyro.az, accelgyro.gx, accelgyro.gy, accelgyro.gz);
+        Serial.printf("Reference - a = (%6d, %6d, %6d), g = (%6d, %6d, %6d)\n", 
+                accelgyro_ref.ax, accelgyro_ref.ay, accelgyro_ref.az, accelgyro_ref.gx, accelgyro_ref.gy, accelgyro_ref.gz);
+
+        Serial.printf("Result: a = %6d, g = %6d, tilt = %6d, wobble = %6d\n", a, g, joystickTilt, joystickWobble);
+        lastInputPrint = millis();
+    }
 #endif
 
     return true;
@@ -1543,6 +1550,8 @@ long map_constrain(long x, long in_min, long in_max, long out_min, long out_max)
 // ---------------------------------
 // --------- SCREENSAVER -----------
 // ---------------------------------
+#define SCREENSAVER_DURATION_MS 60000
+
 typedef enum Screensavers
 {
     FIRE,
@@ -1560,9 +1569,11 @@ typedef enum Screensavers
 void screenSaverTick()
 {
     long mm = millis();
-    Screensavers mode = Screensavers((mm / 30000) % SAVE_EOL);
+    Screensavers mode = Screensavers((mm / SCREENSAVER_DURATION_MS) % SAVE_EOL);
 
     SFXcomplete(); // turn off sound...play testing showed this to be a problem
+
+    FastLED.setBrightness(user_settings.led_brightnessScreensaver);
 
     switch (mode)
     {

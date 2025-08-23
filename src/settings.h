@@ -221,7 +221,7 @@ void settings_set(settings_param_t param)
 			case 'C': // screensaver brightness
 				user_settings.led_brightnessScreensaver = constrain(param.newValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 				settings_eeprom_write();
-				Serial.printf("Set brightness to %d\r\n", user_settings.led_brightnessScreensaver);
+				Serial.printf("Set screensaver brightness to %d\r\n", user_settings.led_brightnessScreensaver);
 				break;
 			case 'S': // sound
 				user_settings.audio_volume = constrain(param.newValue, MIN_VOLUME, MAX_VOLUME);
