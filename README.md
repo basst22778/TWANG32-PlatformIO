@@ -46,6 +46,7 @@ Modifications and bug fixes by [Janek](https://janek.ing).
 - remove running median dependency
 - add option to set led offset and screensaver brightness
 - many small code quality improvements
+- NOT tested with audio, so audio might be buggy
 
 ## Required libraries:
 * [FastLED](http://fastled.io/)
@@ -72,6 +73,7 @@ You have two options:
     1. Screw holes for fixing the knob and spring (since they like to twist when playing, which can skew the gyro readings)
     1. All holes ready for [M3 self-tapering screws](https://www.amazon.de/dp/B0DGGC9ZYC) (though regular M3 screws will work as well)
     1. A small external splitter/junction box, so you can add the power supply separately and closer to the LED strip
+    1. Alternative bases with mounting holes for screwing them down
 
 ![TWANG32](http://www.buildlog.net/blog/wp-content/uploads/2018/03/twang32_enclosure.jpg)
 
