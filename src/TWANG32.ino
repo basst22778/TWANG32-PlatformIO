@@ -824,6 +824,8 @@ void die()
 void tickStartup(long mm)
 {
     FastLED.clear();
+    // temporarily reduce brightness, since full strip will light up, which is much brighter in total
+    FastLED.setBrightness(user_settings.led_brightness / 4);
     if (stageStartTime + STARTUP_WIPEUP_DUR > mm) // fill to the top with green
     {
         int n = mapconstrain(mm - stageStartTime, 0, STARTUP_WIPEUP_DUR, user_settings.led_offset, user_settings.led_end); // fill from top to bottom
@@ -1203,6 +1205,8 @@ void tickDie(long mm)
 void tickGameover(long mm)
 {
     int brightness = 0;
+    // temporarily reduce brightness, since full strip will light up, which is much brighter in total
+    FastLED.setBrightness(user_settings.led_brightness / 4);
 
     if (stageStartTime + GAMEOVER_SPREAD_DURATION > mm) // Spread red from player position to top and bottom
     {
@@ -1235,6 +1239,8 @@ void tickGameover(long mm)
 void tickWin(long mm)
 {
     FastLED.clear();
+    // temporarily reduce brightness, since full strip will light up, which is much brighter in total
+    FastLED.setBrightness(user_settings.led_brightness / 4);
     if (stageStartTime + WIN_FILL_DURATION > mm)
     {
         int n = mapconstrain(mm - stageStartTime, 0, WIN_FILL_DURATION, user_settings.led_end, user_settings.led_offset); // fill from top to bottom
@@ -1552,15 +1558,24 @@ long map_constrain(long x, long in_min, long in_max, long out_min, long out_max)
 // ---------------------------------
 #define SCREENSAVER_DURATION_MS 60000
 
+// These will be played in order based on total on-time
+// Taking SCREENSAVER_DURATION_MS each
+// The placeholders default to off, to reduce battery usage
+// and make screensavers less "busy"
 typedef enum Screensavers
 {
     FIRE,
+    PLACHOLDER_OFF1,
+    PLACEHOLDER_OFF2,
     SINELON,
     JUGGLE,
+    PLACHOLDER_OFF3,
+    PLACEHOLDER_OFF4,
+    // These three are not as nice looking, so removed for now
+    //COLOR_WIPE,
+    //COLOR_WHEEL,
+    //COLOR_CIRCLE,
     LED_MARCH,
-    COLOR_WIPE,
-    COLOR_WHEEL,
-    COLOR_CIRCLE,
     RANDOM_FLASHES,
 
     SAVE_EOL
@@ -1577,7 +1592,7 @@ void screenSaverTick()
 
     switch (mode)
     {
-    case FIRE: Fire2012(); break;
+    case FIRE: FastLED.setBrightness(user_settings.led_brightnessScreensaver / 3); Fire2012(); break;
     case SINELON: sinelon(); break;
     case JUGGLE: juggle(); break;
     case LED_MARCH: LED_march(); break;
@@ -1585,7 +1600,7 @@ void screenSaverTick()
     case COLOR_WHEEL: colorWheel(); break;
     case COLOR_CIRCLE: colorCircle(); break; 
     case RANDOM_FLASHES: random_LED_flashes(); break;
-    // default: juggle(); break; // to test individual animations
+    default: fadeToBlack(10); break; // for PLACEHOLDER_OFF and unknown states
     }
 }
 
@@ -1620,12 +1635,12 @@ void screenSaverTick()
 // COOLING: How much does the air cool as it rises?
 // Less cooling = taller flames.  More cooling = shorter flames.
 // Default 50, suggested range 20-100
-#define COOLING 75
+#define COOLING 100
 
 // SPARKING: What chance (out of 255) is there that a new spark will be lit?
 // Higher chance = more roaring fire.  Lower chance = more flickery fire.
 // Default 120, suggested range 50-200.
-#define SPARKING 40
+#define SPARKING 120
 
 //======================================== SCREEN SAVERS =================
 
@@ -1868,4 +1883,9 @@ void colorCircle()
     {
         leds[pos] = CHSV(-mm / 50, 255, 255);
     }
+}
+
+void fadeToBlack(uint8_t byAmountEachFrame)
+{
+    fadeToBlackBy(leds + user_settings.led_offset, LED_LENGTH, byAmountEachFrame);
 }
