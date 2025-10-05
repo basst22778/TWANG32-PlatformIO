@@ -233,6 +233,14 @@ void setup()
     Serial.print("\r\nCompiled for APA102 (Dotstar) LEDs");
     FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, LED_COLOR_ORDER>(leds, MAX_LEDS);
 #endif
+#ifdef USE_C64_JOYSTICK
+    Serial.print("\r\nCompiled for C64 Joystick");
+    pinMode(C64_JOY_PIN_UP, INPUT_PULLDOWN);
+    pinMode(C64_JOY_PIN_DOWN, INPUT_PULLDOWN);
+    pinMode(C64_JOY_PIN_FIRE, INPUT_PULLDOWN);
+#endif
+
+
 
     FastLED.setBrightness(user_settings.led_brightness);
     FastLED.setDither(1);
@@ -296,7 +304,7 @@ void loop()
             if (accelgyro.connected)
                 Serial.println("Gyro connected!");
         }
-
+        getC64JoystickInput();
         long frameTimer = mm;
         previousMillis = mm;
 
@@ -1362,6 +1370,18 @@ void save_game_stats(bool bossKill)
 // ----------- JOYSTICK ------------
 // ---------------------------------
 // returns success (if at least the main gyro could be read)
+
+bool getC64JoystickInput() {
+    joystickTilt = 0;
+    joystickWobble = 0;
+    // Assumes INPUT_PULLUP on all pins, active LOW
+    if (digitalRead(C64_JOY_PIN_UP) == HIGH)  joystickTilt = -90;
+    if (digitalRead(C64_JOY_PIN_DOWN) == HIGH) joystickTilt = 90;
+    if (digitalRead(C64_JOY_PIN_FIRE) == HIGH)  joystickWobble = 30000;
+    Serial.printf("C64 Joystick: tilt=%d, wobble=%d\n", joystickTilt, joystickWobble);
+    return true;
+}
+
 bool getInput()
 {
     // This is responsible for the player movement speed and attacking.
@@ -1572,9 +1592,9 @@ typedef enum Screensavers
     PLACHOLDER_OFF3,
     PLACEHOLDER_OFF4,
     // These three are not as nice looking, so removed for now
-    //COLOR_WIPE,
-    //COLOR_WHEEL,
-    //COLOR_CIRCLE,
+    COLOR_WIPE,
+    COLOR_WHEEL,
+    COLOR_CIRCLE,
     LED_MARCH,
     RANDOM_FLASHES,
 

@@ -26,8 +26,19 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define DATA_PIN 16
-#define CLOCK_PIN 17
+#define DATA_PIN 23
+#define CLOCK_PIN 17 // only used for APA102/Dotstar
+
+#define USE_C64_JOYSTICK
+// #define USE_MPU // comment this out to use C64 joystick	
+
+#ifdef USE_C64_JOYSTICK
+#define C64_JOY_PIN_UP 19
+#define C64_JOY_PIN_DOWN 18
+#define C64_JOY_PIN_FIRE 16	
+#endif
+
+#define ATTACK_THRESHOLD 40 // how hard you need to shake to attack
 
 /* Game is rendered to this and scaled down to your strip.
  This allows level definitions to work on all strip lengths  */
